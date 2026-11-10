@@ -28,46 +28,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _select(LocationEntry entry) async {
-    final nicknameController = TextEditingController();
-    final confirmed = await showDialog<bool>(
+    final nickname = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(entry.location),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ESCOM\'s own name for this location. Give it a nickname if '
-              'you\'d rather see something else at a glance (optional).',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: nicknameController,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Nickname (optional)',
-                hintText: 'e.g. Home, Office',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      builder: (context) => _NicknameDialog(locationName: entry.location),
     );
-    final nickname = nicknameController.text;
-    nicknameController.dispose();
-    if (confirmed != true || !mounted) return;
+    if (nickname == null || !mounted) return;
 
     final result = await _controller.saveLocation(entry, customName: nickname);
     if (!mounted) return;
@@ -195,6 +160,68 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A [TextEditingController] created inline and disposed right after
+/// `showDialog` resolves races the dialog's own exit animation, which keeps
+/// rebuilding the field for a few more frames after the Future completes -
+/// disposing it that early throws "used after being disposed". Owning the
+/// controller in the dialog's own State ties its disposal to the dialog
+/// element's actual teardown instead.
+class _NicknameDialog extends StatefulWidget {
+  final String locationName;
+
+  const _NicknameDialog({required this.locationName});
+
+  @override
+  State<_NicknameDialog> createState() => _NicknameDialogState();
+}
+
+class _NicknameDialogState extends State<_NicknameDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.locationName),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ESCOM\'s own name for this location. Give it a nickname if '
+            'you\'d rather see something else at a glance (optional).',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Nickname (optional)',
+              hintText: 'e.g. Home, Office',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }
