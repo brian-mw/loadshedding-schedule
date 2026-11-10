@@ -143,5 +143,32 @@ class NotificationScheduler {
     );
   }
 
+  /// Fires a one-off alert (sound/heads-up) the moment a location's status
+  /// actually flips - distinct from [showStatusNotification]'s silent,
+  /// `onlyAlertOnce` update to the ongoing status entry.
+  Future<void> showTransitionAlert({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    await init();
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'power_transitions',
+          'Power transitions',
+          channelDescription: 'Upcoming ON/OFF schedule reminders',
+          importance: Importance.high,
+          priority: Priority.high,
+          autoCancel: true,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
   Future<void> cancelStatusNotification(int id) => _plugin.cancel(id: id);
 }

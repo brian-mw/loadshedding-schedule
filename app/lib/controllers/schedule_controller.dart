@@ -40,11 +40,24 @@ class ScheduleController extends GetxController {
   final Map<String, bool> _lastNotifiedOn = {};
   List<SavedLocation> _knownLocations = [];
 
+  int _ticksSincePoll = 0;
+
   @override
   void onInit() {
     super.onInit();
     _tickTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       now.value = DateTime.now();
+      // Cheap, cache-only recheck so a schedule-driven transition (the
+      // moment `now` crosses a window boundary) gets its notification
+      // within 30s instead of waiting for the location list to change.
+      _refreshStatusNotifications();
+      // A slower full refetch alongside it, so a transition someone else
+      // reported (community status) is also picked up without the user
+      // having to add/remove a location to force a reload.
+      if (++_ticksSincePoll >= 4) {
+        _ticksSincePoll = 0;
+        if (_knownLocations.isNotEmpty) refreshFor(_knownLocations);
+      }
     });
     _loadNotificationPrefs();
   }
@@ -100,9 +113,10 @@ class ScheduleController extends GetxController {
   Future<void> _refreshStatusNotifications({bool force = false}) async {
     if (!statusNotificationsEnabled.value) return;
     for (final loc in _knownLocations) {
-      final isOn = currentWindowFor(loc.groupCode)?.isOn ?? true;
+      final isOn = effectiveIsOn(loc);
       final key = loc.groupCode;
-      final changed = _lastNotifiedOn[key] != isOn;
+      final previous = _lastNotifiedOn[key];
+      final changed = previous != isOn;
       if (!changed && !force) continue;
       _lastNotifiedOn[key] = isOn;
       await _notifications.showStatusNotification(
@@ -112,6 +126,17 @@ class ScheduleController extends GetxController {
         persistent: statusNotificationsPersistent.value,
         isOn: isOn,
       );
+      // A real OFF -> ON transition earns its own alert (sound/heads-up),
+      // not just a silent update to the ongoing status notification - the
+      // scheduled lead-time reminder only warns ahead of the *published*
+      // schedule, which this app elsewhere admits can be wrong.
+      if (changed && !force && previous == false && isOn) {
+        await _notifications.showTransitionAlert(
+          id: _statusId(loc) + 1,
+          title: '${loc.displayName} - power is back on',
+          body: 'Lights are back on.',
+        );
+      }
     }
   }
 
@@ -195,6 +220,7 @@ class ScheduleController extends GetxController {
     _selfReport[key] = isOn;
     _communityStatus[key] = result;
     windowsByGroup.refresh();
+    await _refreshStatusNotifications();
     return result;
   }
 
