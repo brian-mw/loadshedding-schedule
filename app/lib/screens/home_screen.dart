@@ -172,15 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (isOn == null || !context.mounted) return;
-    final result = await _scheduleController.reportStatus(loc, isOn);
-    if (!context.mounted) return;
-    final message = result.official
-        ? 'Confirmed by the community (${result.reporterCount} reports)'
-        : 'Thanks! Needs ${3 - result.reporterCount} more matching report'
-              '${3 - result.reporterCount == 1 ? '' : 's'} to become official';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    await _scheduleController.reportStatus(loc, isOn);
   }
 }
 
