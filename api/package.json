@@ -1,0 +1,28 @@
+{
+  "name": "escom-loadshedding-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "postinstall": "prisma generate",
+    "dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsc",
+    "start": "node dist/src/server.js",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.1.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "prisma": "7.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
