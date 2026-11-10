@@ -119,7 +119,7 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
                     gradient: RadialGradient(
                       center: Alignment(0.23, -0.4),
                       radius: 1.1,
-                      colors: [Color(0x59FFD68C), Color(0x00FFD68C)],
+                      colors: [Color(0x59E0E4EA), Color(0x00E0E4EA)],
                     ),
                   ),
                 ),
@@ -158,10 +158,10 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
                     center: const Alignment(-0.2, -0.3),
                     colors: on
                         ? const [
-                            Color(0xFFFFFDF0),
-                            Color(0xFFFFE38A),
-                            Color(0xFFF5B342),
-                            Color(0xFFD98A1C),
+                            Color(0xFFFFFFFF),
+                            Color(0xFFF5F8FC),
+                            Color(0xFFE0E4EA),
+                            Color(0xFFA8ACB5),
                           ]
                         : const [
                             Color(0x4DFFFFFF),
@@ -174,12 +174,12 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
                   boxShadow: on
                       ? const [
                           BoxShadow(
-                            color: Color(0x8CFFC861),
+                            color: Color(0x8CE0E4EA),
                             blurRadius: 30,
                             spreadRadius: 10,
                           ),
                           BoxShadow(
-                            color: Color(0x38FFC861),
+                            color: Color(0x38E0E4EA),
                             blurRadius: 110,
                             spreadRadius: 40,
                           ),
@@ -392,7 +392,7 @@ class CandleOrBulbCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF3C4254) : const Color(0xFFEBEDEF))
+          ? (isDark ? const Color(0xFF2A2E3B) : const Color(0xFFEBEDEF))
           : const Color(0xFF07060A),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,

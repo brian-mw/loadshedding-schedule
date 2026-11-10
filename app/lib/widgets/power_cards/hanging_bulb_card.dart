@@ -107,8 +107,8 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                   gradient: RadialGradient(
                     colors: on
                         ? [
-                            const Color(0x73FFC861),
-                            const Color(0x00FFC861),
+                            const Color(0x73E0E4EA),
+                            const Color(0x00E0E4EA),
                           ]
                         : [
                             const Color(0x0AFFFFFF),
@@ -206,8 +206,8 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Color(0x52FFD66B),
-                                    Color(0x00FFD66B),
+                                    Color(0x52E0E4EA),
+                                    Color(0x00E0E4EA),
                                   ],
                                 ),
                               ),
@@ -260,10 +260,10 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                                   center: const Alignment(-0.2, -0.3),
                                   colors: on
                                       ? const [
-                                          Color(0xFFFFFDF0),
-                                          Color(0xFFFFE38A),
-                                          Color(0xFFF5B342),
-                                          Color(0xFFD98A1C),
+                                          Color(0xFFFFFFFF),
+                                          Color(0xFFF5F8FC),
+                                          Color(0xFFE0E4EA),
+                                          Color(0xFFA8ACB5),
                                         ]
                                       : const [
                                           Color(0x59FFFFFF),
@@ -275,18 +275,18 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                                 ),
                                 border: Border.all(
                                   color: on
-                                      ? const Color(0x99FFE6A0)
+                                      ? const Color(0x99E8EBF0)
                                       : const Color(0x24FFFFFF),
                                 ),
                                 boxShadow: on
                                     ? [
                                         BoxShadow(
-                                          color: const Color(0x8CFFC861),
+                                          color: const Color(0x8CE0E4EA),
                                           blurRadius: 40 + 10 * breathe,
                                           spreadRadius: 12 + 4 * breathe,
                                         ),
                                         BoxShadow(
-                                          color: const Color(0x38FFC861),
+                                          color: const Color(0x38E0E4EA),
                                           blurRadius: 140 + 20 * breathe,
                                           spreadRadius: 50 + 8 * breathe,
                                         ),
@@ -409,7 +409,7 @@ class HangingBulbCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF404659) : const Color(0xFFEEF0F2))
+          ? (isDark ? const Color(0xFF2D313E) : const Color(0xFFEEF0F2))
           : const Color(0xFF03050A),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
