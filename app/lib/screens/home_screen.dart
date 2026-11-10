@@ -65,16 +65,14 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: saved.length,
               itemBuilder: (context, index) {
                 final loc = saved[index];
-                final current = _scheduleController.currentWindowFor(
-                  loc.groupCode,
-                );
-                final next = _scheduleController.nextWindowFor(
-                  loc.groupCode,
-                );
                 final isOn = _scheduleController.effectiveIsOn(loc);
-                final restoreTime = current != null
-                    ? _time(current.endDateTime)
-                    : (next != null ? _time(next.startDateTime) : '--:--');
+                final transitionAt = _scheduleController.nextTransitionFor(
+                  loc.groupCode,
+                  isOn,
+                );
+                final restoreTime = transitionAt != null
+                    ? _transitionLabel(transitionAt, now)
+                    : '--:--';
                 return PowerCard(
                   key: ValueKey('${loc.groupCode}-${loc.label}'),
                   style: _locationController.cardStyleFor(loc),
@@ -127,6 +125,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _time(DateTime d) =>
       '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  static const _weekdayNames = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+
+  /// Formats a transition time, adding a day qualifier whenever it isn't
+  /// today - otherwise "08:00" tomorrow reads identically to "08:00" later
+  /// today, which is exactly the confusion this was built to avoid.
+  String _transitionLabel(DateTime at, DateTime from) {
+    final time = _time(at);
+    final atDay = DateTime(at.year, at.month, at.day);
+    final fromDay = DateTime(from.year, from.month, from.day);
+    final dayDiff = atDay.difference(fromDay).inDays;
+    if (dayDiff == 0) return time;
+    if (dayDiff == 1) return 'Tomorrow $time';
+    return '${_weekdayNames[at.weekday - 1]} $time';
+  }
 
   Future<void> _reportStatus(BuildContext context, SavedLocation loc) async {
     final isOn = await showDialog<bool>(

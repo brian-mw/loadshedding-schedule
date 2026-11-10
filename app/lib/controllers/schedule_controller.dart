@@ -218,4 +218,20 @@ class ScheduleController extends GetxController {
       ..sort((a, b) => a.startDateTime.compareTo(b.startDateTime));
     return upcoming.isEmpty ? null : upcoming.first;
   }
+
+  /// The next time the status will actually differ from [currentIsOn].
+  /// Windows don't necessarily alternate every slot (several ON slots can
+  /// run back-to-back), so this searches past same-status slots instead of
+  /// just using the current window's end time.
+  DateTime? nextTransitionFor(String groupCode, bool currentIsOn) {
+    final windows = windowsByGroup[groupCode];
+    if (windows == null) return null;
+    final t = now.value;
+    final upcoming = windows.where((w) => w.endDateTime.isAfter(t)).toList()
+      ..sort((a, b) => a.startDateTime.compareTo(b.startDateTime));
+    for (final w in upcoming) {
+      if (w.isOn != currentIsOn) return w.startDateTime;
+    }
+    return null;
+  }
 }
