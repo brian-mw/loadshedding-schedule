@@ -110,6 +110,42 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 24),
+            Text('Transition alerts', style: ShadTheme.of(context).textTheme.h4),
+            const SizedBox(height: 4),
+            Text(
+              'How much notice to give before a saved location\'s power is '
+              'about to go on or off.',
+              style: ShadTheme.of(context).textTheme.muted,
+            ),
+            const SizedBox(height: 12),
+            Obx(
+              () => ShadCard(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    const Expanded(child: Text('Alert me')),
+                    DropdownButton<int>(
+                      value: scheduleController.transitionLeadMinutes.value,
+                      underline: const SizedBox.shrink(),
+                      items: const [
+                        DropdownMenuItem(value: 15, child: Text('15 minutes before')),
+                        DropdownMenuItem(value: 30, child: Text('30 minutes before')),
+                        DropdownMenuItem(value: 60, child: Text('1 hour before')),
+                        DropdownMenuItem(value: 120, child: Text('2 hours before')),
+                        DropdownMenuItem(value: 180, child: Text('3 hours before')),
+                        DropdownMenuItem(value: 240, child: Text('4 hours before')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          scheduleController.setTransitionLeadMinutes(value);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
               'Status notification',
               style: ShadTheme.of(context).textTheme.h4,

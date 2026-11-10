@@ -6,6 +6,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 class NotificationPrefsStore {
   static const _enabledKey = 'status_notification_enabled_v1';
   static const _persistentKey = 'status_notification_persistent_v1';
+  static const _leadTimeKey = 'transition_lead_minutes_v1';
+  static const defaultLeadMinutes = 60;
+
+  Future<int> loadLeadMinutes() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_leadTimeKey) ?? defaultLeadMinutes;
+  }
+
+  Future<void> saveLeadMinutes(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_leadTimeKey, minutes);
+  }
 
   Future<bool> loadEnabled() async {
     final prefs = await SharedPreferences.getInstance();

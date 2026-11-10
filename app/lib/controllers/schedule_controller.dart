@@ -32,6 +32,8 @@ class ScheduleController extends GetxController {
 
   final RxBool statusNotificationsEnabled = false.obs;
   final RxBool statusNotificationsPersistent = false.obs;
+  final RxInt transitionLeadMinutes = NotificationPrefsStore.defaultLeadMinutes
+      .obs;
   // Tracks each location's last-notified on/off state, so the status
   // notification only re-posts when the status actually changes, not on
   // every 30s tick/data refresh.
@@ -51,6 +53,24 @@ class ScheduleController extends GetxController {
     statusNotificationsEnabled.value = await _notificationPrefs.loadEnabled();
     statusNotificationsPersistent.value = await _notificationPrefs
         .loadPersistent();
+    transitionLeadMinutes.value = await _notificationPrefs.loadLeadMinutes();
+  }
+
+  Future<void> setTransitionLeadMinutes(int minutes) async {
+    transitionLeadMinutes.value = minutes;
+    await _notificationPrefs.saveLeadMinutes(minutes);
+    // Re-schedule every known location's reminders at the new lead time,
+    // rather than waiting for the next natural data refresh.
+    for (final loc in _knownLocations) {
+      final windows = windowsByGroup[loc.groupCode];
+      if (windows == null) continue;
+      await _notifications.rescheduleFor(
+        label: loc.displayName,
+        notificationIdBase: loc.groupCode.hashCode & 0x7fffffff,
+        powerWindows: windows,
+        leadTime: Duration(minutes: minutes),
+      );
+    }
   }
 
   Future<void> setStatusNotificationsEnabled(bool value) async {
@@ -119,7 +139,7 @@ class ScheduleController extends GetxController {
           label: loc.displayName,
           notificationIdBase: loc.groupCode.hashCode & 0x7fffffff,
           powerWindows: windows,
-          leadTime: const Duration(minutes: 15),
+          leadTime: Duration(minutes: transitionLeadMinutes.value),
         );
 
         final key = _reportKey(loc);
