@@ -90,7 +90,7 @@ class _DeskFanSceneState extends State<DeskFanScene>
                 color: on
                     ? (MediaQuery.platformBrightnessOf(context) ==
                               Brightness.dark
-                          ? const Color(0xFF484C53)
+                          ? const Color(0xFF3A4055)
                           : const Color(0xFFE8EAED))
                     : const Color(0xFF03050A),
               ),
@@ -513,7 +513,7 @@ class DeskFanCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF484C53) : const Color(0xFFE8EAED))
+          ? (isDark ? const Color(0xFF3A4055) : const Color(0xFFE8EAED))
           : const Color(0xFF03050A),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,

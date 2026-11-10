@@ -143,7 +143,7 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
                 color: on
                     ? (MediaQuery.platformBrightnessOf(context) ==
                               Brightness.dark
-                          ? const Color(0xFF464A50)
+                          ? const Color(0xFF383E4F)
                           : const Color(0xFFE6E8EB))
                     : const Color(0xFF120C09),
               ),
@@ -551,7 +551,7 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF464A50) : const Color(0xFFE6E8EB))
+          ? (isDark ? const Color(0xFF383E4F) : const Color(0xFFE6E8EB))
           : const Color(0xFF120C09),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,

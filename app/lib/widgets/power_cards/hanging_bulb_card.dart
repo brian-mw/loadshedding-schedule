@@ -409,7 +409,7 @@ class HangingBulbCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF4C5059) : const Color(0xFFEEF0F2))
+          ? (isDark ? const Color(0xFF404659) : const Color(0xFFEEF0F2))
           : const Color(0xFF03050A),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,

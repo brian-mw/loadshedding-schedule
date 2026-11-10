@@ -392,7 +392,7 @@ class CandleOrBulbCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF494D54) : const Color(0xFFEBEDEF))
+          ? (isDark ? const Color(0xFF3C4254) : const Color(0xFFEBEDEF))
           : const Color(0xFF07060A),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
