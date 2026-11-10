@@ -1,0 +1,44 @@
+name: Scrape ESCOM loadshedding programme
+
+on:
+  schedule:
+    # daily at 06:00 UTC - ESCOM's publish day has varied (Mon/Sat/Sun across
+    # the already-scraped history), and fetch_escom_pdfs.py is idempotent, so
+    # a no-op run on days with nothing new costs nothing.
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pipeline dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Fetch + parse any new loadshedding PDFs
+        run: python pipeline/fetch_escom_pdfs.py
+
+      - name: Load newest week into Postgres
+        # DATABASE_URL secret should be Supabase's DIRECT connection string (port
+        # 5432), not the pooled one - this is a single short-lived job, not many
+        # concurrent serverless invocations, so pooling isn't needed here (the
+        # Fastify API uses the pooled string instead - see api/.env.example).
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python pipeline/load_to_db.py --latest
+
+      - name: Commit any new data files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "data: add newly scraped loadshedding programme(s)"
+          git push
