@@ -155,9 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => AlertDialog(
         title: Text('Report power status for ${loc.displayName}'),
         content: const Text(
-          'Seeing something different from what\'s shown? Let others '
-          'know - once 3 people report the same thing, it becomes official '
-          'for everyone looking up this location.',
+          'Seeing something different from what\'s shown? Let us know.',
         ),
         actions: [
           TextButton(
