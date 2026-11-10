@@ -35,7 +35,7 @@ class _DeskFanSceneState extends State<DeskFanScene>
     );
     _sweep = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2600),
+      duration: const Duration(milliseconds: 5200),
     );
     _airflow = AnimationController(
       vsync: this,
@@ -127,6 +127,88 @@ class _DeskFanSceneState extends State<DeskFanScene>
                   ),
                 ),
               ),
+            ),
+            // Wall socket plate (same look as the earlier phone-charging
+            // card's) and the cable running down to the fan's base.
+            Positioned(
+              left: 236 * sx,
+              top: 92 * sy,
+              width: 70 * sx,
+              height: 70 * sy,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                decoration: BoxDecoration(
+                  color: on ? const Color(0xFFF7F5F0) : const Color(0xFF191B20),
+                  borderRadius: BorderRadius.circular(8 * sx),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 8 * sx,
+                      top: 10 * sy,
+                      width: 16 * sx,
+                      height: 26 * sy,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: on
+                              ? const Color(0xFFE9E6DF)
+                              : const Color(0xFF121418),
+                          borderRadius: BorderRadius.circular(3 * sx),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 12 * sx,
+                      top: 44 * sy,
+                      width: 8 * sx,
+                      height: 8 * sx,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: on
+                              ? const Color(0xFFFF6A3D)
+                              : const Color(0xFF2A1614),
+                          boxShadow: on
+                              ? const [
+                                  BoxShadow(
+                                    color: Color(0xB3FF6A3D),
+                                    blurRadius: 6,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : const [],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 32 * sx,
+                      top: 16 * sy,
+                      width: 30 * sx,
+                      height: 38 * sy,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F1EC),
+                          borderRadius: BorderRadius.circular(4 * sx),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black38, blurRadius: 4),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: CustomPaint(painter: _FanCablePainter(sx: sx, sy: sy)),
             ),
             // Base/foot - stays put on the desk; only the head above it sweeps.
             Positioned(
@@ -267,6 +349,33 @@ class _DeskFanSceneState extends State<DeskFanScene>
       },
     );
   }
+}
+
+/// Cable from the wall socket down to the fan's base - the base, not the
+/// swiveling head, so the cord doesn't need to follow the sweep.
+class _FanCablePainter extends CustomPainter {
+  final double sx;
+  final double sy;
+  const _FanCablePainter({required this.sx, required this.sy});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(271 * sx, 154 * sy)
+      ..cubicTo(282 * sx, 196 * sy, 298 * sx, 218 * sy, 262 * sx, 230 * sy)
+      ..cubicTo(238 * sx, 238 * sy, 230 * sx, 246 * sy, 226 * sx, 256 * sy);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFFE9E6DF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4 * sx
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _FanCablePainter oldDelegate) => false;
 }
 
 /// Draws the fan's blades (behind) and wire guard (in front), both inside
