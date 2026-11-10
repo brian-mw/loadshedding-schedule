@@ -164,7 +164,13 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
               builder: (context, _) {
                 return CustomPaint(
                   size: Size(358 * sx, 480 * sy),
-                  painter: _KitchenPainter(on: on, pulse: _ember.value),
+                  painter: _KitchenPainter(
+                    on: on,
+                    pulse: _ember.value,
+                    isDark:
+                        MediaQuery.platformBrightnessOf(context) ==
+                        Brightness.dark,
+                  ),
                 );
               },
             ),
@@ -337,8 +343,13 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
 class _KitchenPainter extends CustomPainter {
   final bool on;
   final double pulse;
+  final bool isDark;
 
-  const _KitchenPainter({required this.on, required this.pulse});
+  const _KitchenPainter({
+    required this.on,
+    required this.pulse,
+    required this.isDark,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -390,13 +401,15 @@ class _KitchenPainter extends CustomPainter {
       doorPaint,
     );
 
-    // Hot plate base + coils + pilot.
+    // Hot plate base + coils + pilot. In dark theme the lit wall is itself
+    // a dark slate, so the base needs a lighter tone here to stay visible -
+    // in light theme the wall is pale, so the original dark base still pops.
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(44 * sx, 234 * sy, 120 * sx, 16 * sy),
         Radius.circular(3 * sx),
       ),
-      Paint()..color = const Color(0xFF2A2D33),
+      Paint()..color = (on && isDark) ? const Color(0xFF6A6F7A) : const Color(0xFF2A2D33),
     );
     final coilAColor = on ? const Color(0xFFFF5A2A) : const Color(0xFF4A4D53);
     final coilAPaint = Paint()
@@ -510,7 +523,9 @@ class _KitchenPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _KitchenPainter oldDelegate) =>
-      oldDelegate.on != on || oldDelegate.pulse != pulse;
+      oldDelegate.on != on ||
+      oldDelegate.pulse != pulse ||
+      oldDelegate.isDark != isDark;
 }
 
 /// Full [PowerCardScaffold] wiring for the mbaula-or-hot-plate style.
