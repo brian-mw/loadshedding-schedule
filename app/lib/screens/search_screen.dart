@@ -40,7 +40,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Text(
               'ESCOM\'s own name for this location. Give it a nickname if '
               'you\'d rather see something else at a glance (optional).',
-              style: ShadTheme.of(context).textTheme.muted,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
             TextField(
