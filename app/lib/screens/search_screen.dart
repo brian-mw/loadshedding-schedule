@@ -5,6 +5,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../controllers/location_controller.dart';
 import '../data/saved_locations_store.dart';
 import '../models/location_entry.dart';
+import '../widgets/skeleton.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -93,7 +94,14 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: Obx(() {
                 if (_controller.isSearching.value) {
-                  return const Center(child: CircularProgressIndicator());
+                  return ListView.separated(
+                    itemCount: 6,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) => const ShadCard(
+                      padding: EdgeInsets.all(12),
+                      child: SearchResultSkeleton(),
+                    ),
+                  );
                 }
                 final results = _controller.searchResults;
                 if (results.isEmpty) {

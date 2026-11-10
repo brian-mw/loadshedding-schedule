@@ -185,7 +185,11 @@ class PowerCardScaffold extends StatelessWidget {
                                     fontSize: 13,
                                     color: subTextColor,
                                   ),
-                                  child: Text(subText),
+                                  child: Text(
+                                    subText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),

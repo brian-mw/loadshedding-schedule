@@ -6,6 +6,7 @@ import '../controllers/location_controller.dart';
 import '../controllers/schedule_controller.dart';
 import '../data/saved_locations_store.dart';
 import '../widgets/power_cards/power_card.dart';
+import '../widgets/skeleton.dart';
 import 'location_detail_screen.dart';
 import 'search_screen.dart';
 import 'settings_screen.dart';
@@ -55,6 +56,11 @@ class _HomeScreenState extends State<HomeScreen> {
       // time live without waiting for a full data refresh.
       final now = _scheduleController.now.value;
       final currentTime = _time(now);
+      // Touch `windowsByGroup` here (not just inside itemBuilder, which GetX
+      // doesn't reliably track as an Obx dependency when nested in a
+      // PageView.builder) so the skeleton swaps to the real card the moment
+      // data arrives, instead of waiting for the next 30s tick.
+      final loadedGroups = _scheduleController.windowsByGroup.keys.toSet();
 
       return Scaffold(
         backgroundColor: Colors.black,
@@ -65,6 +71,9 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: saved.length,
               itemBuilder: (context, index) {
                 final loc = saved[index];
+                if (!loadedGroups.contains(loc.groupCode)) {
+                  return const PowerCardSkeleton();
+                }
                 final isOn = _scheduleController.effectiveIsOn(loc);
                 final transitionAt = _scheduleController.nextTransitionFor(
                   loc.groupCode,
@@ -106,7 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 18,
+                // Clear of the footer's status/sub-text block (bounded to a
+                // single line) and schedule button, which both sit lower.
+                bottom: 92,
                 child: SafeArea(
                   top: false,
                   child: Center(

@@ -5,6 +5,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../controllers/schedule_controller.dart';
 import '../data/saved_locations_store.dart';
 import '../models/power_window.dart';
+import '../widgets/skeleton.dart';
 
 class LocationDetailScreen extends StatelessWidget {
   final SavedLocation location;
@@ -20,7 +21,24 @@ class LocationDetailScreen extends StatelessWidget {
       body: Obx(() {
         final windows = scheduleController.windowsByGroup[location.groupCode];
         if (windows == null) {
-          return const Center(child: CircularProgressIndicator());
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              for (var day = 0; day < 2; day++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SkeletonBox(width: 150, height: 18),
+                      const SizedBox(height: 10),
+                      for (var slot = 0; slot < 5; slot++)
+                        const ScheduleSlotSkeleton(),
+                    ],
+                  ),
+                ),
+            ],
+          );
         }
         final byDay = <DateTime, List<PowerWindow>>{};
         for (final w in windows) {
