@@ -43,11 +43,23 @@ class LocationController extends GetxController {
 
   PowerCardStyle cardStyleFor(SavedLocation location) {
     final key = '${location.groupCode}-${location.label}';
-    return _cardStyles.putIfAbsent(
-      key,
-      () =>
-          PowerCardStyle.values[_random.nextInt(PowerCardStyle.values.length)],
-    );
+    final cached = _cardStyles[key];
+    if (cached != null) return cached;
+
+    // Independent random picks can coincidentally collide (25% chance with
+    // only 2 saved locations and 4 styles), making both cards look like the
+    // same scene - so prefer a style not already taken by another saved
+    // location this session.
+    final taken = savedLocations
+        .where((other) => '${other.groupCode}-${other.label}' != key)
+        .map((other) => _cardStyles['${other.groupCode}-${other.label}'])
+        .whereType<PowerCardStyle>()
+        .toSet();
+    final pool = PowerCardStyle.values.where((s) => !taken.contains(s)).toList();
+    final choices = pool.isNotEmpty ? pool : PowerCardStyle.values;
+    final style = choices[_random.nextInt(choices.length)];
+    _cardStyles[key] = style;
+    return style;
   }
 
   /// A randomly-picked phrase for the big status line, stable for as long as
