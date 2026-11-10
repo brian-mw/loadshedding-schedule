@@ -28,6 +28,15 @@ class PowerWindow {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+    'date': date.toIso8601String(),
+    'subgroup': subgroup,
+    'slotIndex': slotIndex,
+    'startTime': startTime,
+    'endTime': endTime,
+    'status': status,
+  };
+
   /// Combine [date] with [startTime]/[endTime] into real DateTimes, handling
   /// the overnight slot (end time earlier than start time means it rolls into
   /// the next day).

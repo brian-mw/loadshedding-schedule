@@ -5,6 +5,7 @@ import '../data/api_repository.dart';
 import '../data/device_id_store.dart';
 import '../data/notification_prefs_store.dart';
 import '../data/saved_locations_store.dart';
+import '../data/schedule_cache_store.dart';
 import '../data/self_report_store.dart';
 import '../models/power_window.dart';
 import '../notifications/notification_scheduler.dart';
@@ -15,6 +16,11 @@ class ScheduleController extends GetxController {
   final NotificationPrefsStore _notificationPrefs = NotificationPrefsStore();
   final DeviceIdStore _deviceIdStore = DeviceIdStore();
   final SelfReportStore _selfReportStore = SelfReportStore();
+  final ScheduleCacheStore _scheduleCache = ScheduleCacheStore();
+
+  /// How long a cached schedule is trusted before fetching a fresh one -
+  /// ESCOM's published programme doesn't change more often than this.
+  static const _scheduleFreshFor = Duration(days: 1);
 
   // location|groupCode -> community-confirmed status, refreshed alongside
   // the schedule data.
@@ -154,18 +160,39 @@ class ScheduleController extends GetxController {
       final from = DateTime.now().subtract(const Duration(hours: 12));
       final to = DateTime.now().add(const Duration(days: 7));
       for (final loc in locations) {
-        final windows = await _api.getPowerWindows(
-          subgroup: loc.groupCode,
-          from: from,
-          to: to,
-        );
-        windowsByGroup[loc.groupCode] = windows;
-        await _notifications.rescheduleFor(
-          label: loc.displayName,
-          notificationIdBase: loc.groupCode.hashCode & 0x7fffffff,
-          powerWindows: windows,
-          leadTime: Duration(minutes: transitionLeadMinutes.value),
-        );
+        // Serve the cached schedule immediately, before even checking
+        // staleness, so a cold start never has to wait on the network for
+        // data it already has.
+        if (!windowsByGroup.containsKey(loc.groupCode)) {
+          final cached = await _scheduleCache.load(loc.groupCode);
+          if (cached != null) windowsByGroup[loc.groupCode] = cached;
+        }
+
+        final lastFetched = await _scheduleCache.fetchedAt(loc.groupCode);
+        final stale =
+            lastFetched == null ||
+            DateTime.now().difference(lastFetched) >= _scheduleFreshFor;
+        if (stale) {
+          try {
+            final windows = await _api.getPowerWindows(
+              subgroup: loc.groupCode,
+              from: from,
+              to: to,
+            );
+            windowsByGroup[loc.groupCode] = windows;
+            await _scheduleCache.save(loc.groupCode, windows);
+            await _notifications.rescheduleFor(
+              label: loc.displayName,
+              notificationIdBase: loc.groupCode.hashCode & 0x7fffffff,
+              powerWindows: windows,
+              leadTime: Duration(minutes: transitionLeadMinutes.value),
+            );
+          } catch (_) {
+            // Keep showing cached data rather than erroring the screen -
+            // ESCOM's schedule rarely changes mid-week, so a failed refresh
+            // here isn't urgent.
+          }
+        }
 
         final key = _reportKey(loc);
         _selfReport[key] = await _selfReportStore.currentFor(
