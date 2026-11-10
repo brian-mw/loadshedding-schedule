@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import locationsRoutes from './routes/locations';
 import powerWindowsRoutes from './routes/powerWindows';
 import programmesRoutes from './routes/programmes';
+import statusReportsRoutes from './routes/statusReports';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -14,6 +15,7 @@ export function buildApp() {
   app.register(locationsRoutes);
   app.register(powerWindowsRoutes);
   app.register(programmesRoutes);
+  app.register(statusReportsRoutes);
 
   return app;
 }
