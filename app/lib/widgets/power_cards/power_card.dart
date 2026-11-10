@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../models/power_card_style.dart';
 import 'candle_or_bulb_card.dart';
+import 'desk_fan_card.dart';
 import 'hanging_bulb_card.dart';
 import 'mbaula_or_hotplate_card.dart';
-import 'phone_charging_card.dart';
 
 /// Dispatches to the illustrated power-status scene matching the user's
 /// chosen [style].
@@ -73,8 +73,8 @@ class PowerCard extends StatelessWidget {
           onViewSchedule: onViewSchedule,
           headerAction: headerAction,
         );
-      case PowerCardStyle.phoneCharging:
-        return PhoneChargingCard(
+      case PowerCardStyle.deskFan:
+        return DeskFanCard(
           isOn: isOn,
           areaName: areaName,
           groupLabel: groupLabel,

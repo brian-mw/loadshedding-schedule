@@ -1,1 +1,1 @@
-enum PowerCardStyle { hangingBulb, candleOrBulb, mbaulaOrHotPlate, phoneCharging }
+enum PowerCardStyle { hangingBulb, candleOrBulb, mbaulaOrHotPlate, deskFan }
