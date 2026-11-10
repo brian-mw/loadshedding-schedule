@@ -51,7 +51,15 @@ class LocationDetailScreen extends StatelessWidget {
                   ...dayWindows.map(
                     (w) => Padding(
                       padding: const EdgeInsets.only(bottom: 6),
-                      child: _SlotRow(window: w),
+                      child: _SlotRow(
+                        window: w,
+                        isCurrent: !scheduleController.now.value.isBefore(
+                              w.startDateTime,
+                            ) &&
+                            scheduleController.now.value.isBefore(
+                              w.endDateTime,
+                            ),
+                      ),
                     ),
                   ),
                 ],
@@ -66,8 +74,9 @@ class LocationDetailScreen extends StatelessWidget {
 
 class _SlotRow extends StatelessWidget {
   final PowerWindow window;
+  final bool isCurrent;
 
-  const _SlotRow({required this.window});
+  const _SlotRow({required this.window, required this.isCurrent});
 
   @override
   Widget build(BuildContext context) {
@@ -77,30 +86,43 @@ class _SlotRow extends StatelessWidget {
     // red) it reads as "red = on", which is backwards from the ON/OFF text
     // next to it. Use status colour (green/red) consistently instead.
     final statusColor = isOn ? Colors.green.shade400 : Colors.red.shade400;
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 28,
-          decoration: BoxDecoration(
-            color: statusColor,
-            borderRadius: BorderRadius.circular(3),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        // A soft, neutral tint for "this is the slot happening right now" -
+        // deliberately not green/red, since that already means on/off.
+        color: isCurrent
+            ? ShadTheme.of(context).colorScheme.primary.withValues(alpha: 0.08)
+            : null,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 28,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(3),
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          '${_fmt(window.startTime)} - ${_fmt(window.endTime)}',
-          style: ShadTheme.of(context).textTheme.p,
-        ),
-        const Spacer(),
-        Text(
-          isOn ? 'ON' : 'OFF',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isOn ? Colors.green.shade700 : Colors.red.shade700,
+          const SizedBox(width: 10),
+          Text(
+            '${_fmt(window.startTime)} - ${_fmt(window.endTime)}',
+            style: ShadTheme.of(context).textTheme.p.copyWith(
+              fontWeight: isCurrent ? FontWeight.w700 : null,
+            ),
           ),
-        ),
-      ],
+          const Spacer(),
+          Text(
+            isOn ? 'ON' : 'OFF',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isOn ? Colors.green.shade700 : Colors.red.shade700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
