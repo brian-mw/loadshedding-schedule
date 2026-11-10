@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PowerStatus {
+  ON
+  OFF
+}
+
+model Programme {
+  id          BigInt   @id @default(autoincrement())
+  weekLabel   String   @unique @map("week_label")
+  title       String?
+  issueDate   String?  @map("issue_date")
+  weekStart   DateTime @map("week_start") @db.Date
+  weekEnd     DateTime @map("week_end") @db.Date
+  fetchedAt   DateTime @default(now()) @map("fetched_at")
+
+  powerWindows PowerWindow[]
+  locations    Location[]
+
+  @@map("programmes")
+}
+
+model PowerWindow {
+  id          BigInt      @id @default(autoincrement())
+  programmeId BigInt      @map("programme_id")
+  programme   Programme   @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  date        DateTime    @db.Date
+  subgroup    String
+  slotIndex   Int         @map("slot_index")
+  startTime   DateTime    @map("start_time") @db.Time
+  endTime     DateTime    @map("end_time") @db.Time
+  status      PowerStatus
+
+  @@unique([date, subgroup, slotIndex])
+  @@index([subgroup, date])
+  @@map("power_windows")
+}
+
+model Location {
+  id            BigInt     @id @default(autoincrement())
+  programmeId   BigInt?    @map("programme_id")
+  programme     Programme? @relation(fields: [programmeId], references: [id])
+  groupCode     String     @map("group_code")
+  region        String
+  location      String
+  affectedAreas String     @map("affected_areas")
+
+  @@map("locations")
+}
+
+// A device's current crowd-sourced claim about one location's power status.
+// Unique per (location, groupCode, deviceId) so re-reporting replaces the
+// device's previous claim instead of accumulating duplicates that would
+// inflate its own count - "official" status is computed live by the API by
+// counting distinct deviceIds per status within a freshness window, not
+// stored here.
+model StatusReport {
+  id         BigInt      @id @default(autoincrement())
+  location   String
+  groupCode  String      @map("group_code")
+  deviceId   String      @map("device_id")
+  status     PowerStatus
+  reportedAt DateTime    @default(now()) @map("reported_at")
+
+  @@unique([location, groupCode, deviceId])
+  @@index([location, groupCode, status, reportedAt])
+  @@map("status_reports")
+}
