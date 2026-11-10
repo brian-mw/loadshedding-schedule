@@ -140,7 +140,12 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
               height: 400 * sy,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
-                color: on ? const Color(0xFFE6E8EB) : const Color(0xFF120C09),
+                color: on
+                    ? (MediaQuery.platformBrightnessOf(context) ==
+                              Brightness.dark
+                          ? const Color(0xFF464A50)
+                          : const Color(0xFFE6E8EB))
+                    : const Color(0xFF120C09),
               ),
             ),
             Positioned(
@@ -539,13 +544,17 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
     final darkInkSoft = const Color(0xFF52565C);
     final lightInk = const Color(0xFFF3F5F9);
     final lightInkSoft = const Color(0xFFA9B0BE);
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final litOn = isOn && !isDark;
     return PowerCardScaffold(
       isOn: isOn,
       areaName: areaName,
       groupLabel: groupLabel,
-      backgroundColor: isOn ? const Color(0xFFE6E8EB) : const Color(0xFF120C09),
-      inkColor: isOn ? darkInk : lightInk,
-      inkSoftColor: isOn ? darkInkSoft : lightInkSoft,
+      backgroundColor: isOn
+          ? (isDark ? const Color(0xFF464A50) : const Color(0xFFE6E8EB))
+          : const Color(0xFF120C09),
+      inkColor: litOn ? darkInk : lightInk,
+      inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
       chipBackgroundColor: isOn
           ? const Color(0xE11C1E21)
           : const Color(0x14FFFFFF),
@@ -555,11 +564,11 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
       // On a light (cream) background, amber/cream text used by the dark
       // styles reads as near-invisible - fall back to the same dark ink the
       // header uses whenever the card itself is light.
-      statusTextColor: isOn ? darkInk : lightInk,
+      statusTextColor: litOn ? darkInk : lightInk,
       subText: isOn
           ? 'Cooking on the hot plate · next outage $restoreTime'
           : 'Nsima on the mbaula tonight · back at $restoreTime',
-      subTextColor: isOn ? darkInkSoft : lightInkSoft,
+      subTextColor: litOn ? darkInkSoft : lightInkSoft,
       currentTime: currentTime,
       scene: MbaulaOrHotPlateScene(isOn: isOn, reduceMotion: reduceMotion),
       onViewSchedule: onViewSchedule,
