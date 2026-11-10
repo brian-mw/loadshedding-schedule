@@ -8,8 +8,91 @@ on:
     - cron: "0 6 * * *"
   workflow_dispatch: {}
 
+# Each job runs on a fresh runner, so the data/ directory is handed from one
+# job to the next as a short-lived artifact, and each job reinstalls the
+# (pip-cached) dependencies.
 jobs:
-  scrape:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      # warms the pip cache for the jobs below and fails fast on a broken
+      # requirements.txt
+      - name: Install pipeline dependencies
+        run: pip install -r pipeline/requirements.txt
+
+  fetch:
+    name: Fetch PDFs
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install pipeline dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Download any new loadshedding PDFs
+        run: python pipeline/fetch_escom_pdfs.py --no-parse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-fetched
+          path: data/
+          retention-days: 1
+
+  parse:
+    name: Parse
+    needs: fetch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install pipeline dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-fetched
+          path: data/
+
+      - name: Parse any PDFs that haven't been parsed yet
+        run: |
+          for dir in data/*/; do
+            if [ -f "${dir}source.pdf" ] && [ ! -f "${dir}metadata.json" ]; then
+              echo "parsing ${dir}"
+              python pipeline/parse_escom_pdf.py "${dir}source.pdf" "${dir}"
+            fi
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-parsed
+          path: data/
+          retention-days: 1
+
+  upload:
+    name: Upload to DB
+    needs: parse
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,12 +102,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
 
       - name: Install pipeline dependencies
         run: pip install -r pipeline/requirements.txt
 
-      - name: Fetch + parse any new loadshedding PDFs
-        run: python pipeline/fetch_escom_pdfs.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-parsed
+          path: data/
 
       - name: Load newest week into Postgres
         # DATABASE_URL secret should be Supabase's DIRECT connection string (port
