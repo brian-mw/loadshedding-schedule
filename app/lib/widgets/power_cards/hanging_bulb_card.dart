@@ -24,8 +24,17 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
   late final AnimationController _swingController;
   late final AnimationController _pullController;
   late final AnimationController _glow;
+  late final AnimationController _springBack;
   late final Animation<double> _swing;
   late final Animation<double> _pull;
+
+  // The user can grab the pull-chain's knob and drag it down themselves -
+  // purely tactile for now, no status action is wired to it yet. Tracked
+  // separately from [_pull] (the automatic tug-on-status-change animation)
+  // since the two have very different motion shapes: this one should track
+  // the finger 1:1 while dragging, not follow a fixed tween.
+  double _dragPull = 0;
+  Tween<double>? _springBackTween;
 
   @override
   void initState() {
@@ -38,6 +47,16 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    _springBack = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..addListener(() {
+      setState(() {
+        _dragPull = _springBackTween!.transform(
+          Curves.elasticOut.transform(_springBack.value),
+        );
+      });
+    });
     // A slow, gentle brightness "breathe" so the lit bulb isn't perfectly
     // static once the swing settles - the only one of the four cards with no
     // continuous idle motion otherwise.
@@ -83,7 +102,23 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
     _swingController.dispose();
     _pullController.dispose();
     _glow.dispose();
+    _springBack.dispose();
     super.dispose();
+  }
+
+  void _onChainDragStart(DragStartDetails _) {
+    _springBack.stop();
+  }
+
+  void _onChainDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragPull = (_dragPull + details.delta.dy).clamp(0.0, 36.0);
+    });
+  }
+
+  void _onChainDragEnd(DragEndDetails _) {
+    _springBackTween = Tween<double>(begin: _dragPull, end: 0);
+    _springBack.forward(from: 0);
   }
 
   @override
@@ -118,13 +153,14 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                 ),
               ),
             ),
-            // Pull chain (doesn't swing).
+            // Pull chain (doesn't swing). The knob can also be dragged down
+            // by hand, on top of the automatic tug-on-status-change motion.
             AnimatedBuilder(
               animation: _pull,
               builder: (context, _) {
                 return Positioned(
                   left: 282 * sx,
-                  top: _pull.value * sy,
+                  top: (_pull.value + _dragPull) * sy,
                   width: 14 * sx,
                   height: (190 + 22) * sy,
                   child: Column(
@@ -146,22 +182,37 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                           ),
                         ),
                       ),
-                      Container(
-                        width: 14 * sx,
-                        height: 22 * sy,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(7 * sx),
-                          gradient: const RadialGradient(
-                            center: Alignment(-0.2, -0.4),
-                            colors: [Color(0xFFE9D9B0), Color(0xFFA88A4E)],
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black54,
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragStart: _onChainDragStart,
+                        onVerticalDragUpdate: _onChainDragUpdate,
+                        onVerticalDragEnd: _onChainDragEnd,
+                        child: Container(
+                          width: 28 * sx,
+                          height: 22 * sy,
+                          alignment: Alignment.center,
+                          color: Colors.transparent,
+                          child: Container(
+                            width: 14 * sx,
+                            height: 22 * sy,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(7 * sx),
+                              gradient: const RadialGradient(
+                                center: Alignment(-0.2, -0.4),
+                                colors: [
+                                  Color(0xFFE9D9B0),
+                                  Color(0xFFA88A4E),
+                                ],
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black54,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
