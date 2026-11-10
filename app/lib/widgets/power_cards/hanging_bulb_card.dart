@@ -47,16 +47,17 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _springBack = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    )..addListener(() {
-      setState(() {
-        _dragPull = _springBackTween!.transform(
-          Curves.elasticOut.transform(_springBack.value),
-        );
-      });
-    });
+    _springBack =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 500),
+        )..addListener(() {
+          setState(() {
+            _dragPull = _springBackTween!.transform(
+              Curves.elasticOut.transform(_springBack.value),
+            );
+          });
+        });
     // A slow, gentle brightness "breathe" so the lit bulb isn't perfectly
     // static once the swing settles - the only one of the four cards with no
     // continuous idle motion otherwise.
@@ -65,13 +66,15 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
       duration: const Duration(milliseconds: 2200),
     );
     _syncGlow();
-    _swing = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0, end: 7), weight: 15),
-      TweenSequenceItem(tween: Tween(begin: 7, end: -5), weight: 20),
-      TweenSequenceItem(tween: Tween(begin: -5, end: 3), weight: 20),
-      TweenSequenceItem(tween: Tween(begin: 3, end: -1.5), weight: 20),
-      TweenSequenceItem(tween: Tween(begin: -1.5, end: 0), weight: 25),
-    ]).animate(CurvedAnimation(parent: _swingController, curve: Curves.easeOut));
+    _swing = TweenSequence<double>(
+      [
+        TweenSequenceItem(tween: Tween(begin: 0, end: 7), weight: 15),
+        TweenSequenceItem(tween: Tween(begin: 7, end: -5), weight: 20),
+        TweenSequenceItem(tween: Tween(begin: -5, end: 3), weight: 20),
+        TweenSequenceItem(tween: Tween(begin: 3, end: -1.5), weight: 20),
+        TweenSequenceItem(tween: Tween(begin: -1.5, end: 0), weight: 25),
+      ],
+    ).animate(CurvedAnimation(parent: _swingController, curve: Curves.easeOut));
     _pull = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0, end: 22), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 22, end: 0), weight: 70),
@@ -124,6 +127,11 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
   @override
   Widget build(BuildContext context) {
     final on = widget.isOn;
+    // Light has to read brighter than the wall it falls on: near-white on
+    // the pale light-theme wall, a cool grey on the dark-theme one.
+    final glow = MediaQuery.platformBrightnessOf(context) == Brightness.dark
+        ? const Color(0xFFE0E4EA)
+        : Colors.white;
     return DesignCanvas(
       builder: (context, sx, sy) {
         return Stack(
@@ -135,20 +143,29 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
               top: 372 * sy,
               width: 260 * sx,
               height: 36 * sy,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 400),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: on
-                        ? [
-                            const Color(0x73E0E4EA),
-                            const Color(0x00E0E4EA),
-                          ]
-                        : [
-                            const Color(0x0AFFFFFF),
-                            const Color(0x00FFFFFF),
-                          ],
+              // A radial gradient is circular, so it's drawn in a square
+              // and stretched sideways into the pool's ellipse.
+              child: Center(
+                child: Transform.scale(
+                  scaleX: 260 / 36,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    width: 36 * sy,
+                    height: 36 * sy,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: on
+                            ? [
+                                glow.withValues(alpha: 0.30),
+                                glow.withValues(alpha: 0),
+                              ]
+                            : [
+                                const Color(0x0AFFFFFF),
+                                const Color(0x00FFFFFF),
+                              ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -167,18 +184,10 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                     children: [
                       Expanded(
                         child: Center(
-                          child: Container(
-                            width: 0,
-                            height: double.infinity,
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                left: BorderSide(
-                                  color: Color(0xFF8A909C),
-                                  width: 2,
-                                  style: BorderStyle.solid,
-                                ),
-                              ),
-                            ),
+                          child: FadingCord(
+                            color: const Color(0xFF8A909C),
+                            width: 2,
+                            fadeLength: 48 * sy,
                           ),
                         ),
                       ),
@@ -199,10 +208,7 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                               borderRadius: BorderRadius.circular(7 * sx),
                               gradient: const RadialGradient(
                                 center: Alignment(-0.2, -0.4),
-                                colors: [
-                                  Color(0xFFE9D9B0),
-                                  Color(0xFFA88A4E),
-                                ],
+                                colors: [Color(0xFFE9D9B0), Color(0xFFA88A4E)],
                               ),
                               boxShadow: const [
                                 BoxShadow(
@@ -240,6 +246,39 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
+                      // Room glow around the bulb - a soft gradient disc
+                      // that fades out fully on its own, so the lit wall
+                      // blends evenly into the header above instead of
+                      // showing a patch of a different shade around the bulb.
+                      Positioned(
+                        left: (179 - 260) * sx,
+                        top: (208 - 260) * sy,
+                        width: 520 * sx,
+                        height: 520 * sy,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 350),
+                          opacity: on ? 1 : 0,
+                          child: AnimatedBuilder(
+                            animation: _glow,
+                            builder: (context, child) => Transform.scale(
+                              scale: 1 + 0.06 * _glow.value,
+                              child: child,
+                            ),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: RadialGradient(
+                                  colors: [
+                                    glow.withValues(alpha: 0.30),
+                                    glow.withValues(alpha: 0.10),
+                                    glow.withValues(alpha: 0),
+                                  ],
+                                  stops: const [0.0, 0.45, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                       // Light cone.
                       Positioned(
                         left: 9 * sx,
@@ -252,13 +291,13 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                           child: ClipPath(
                             clipper: _ConeClipper(),
                             child: Container(
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Color(0x52E0E4EA),
-                                    Color(0x00E0E4EA),
+                                    glow.withValues(alpha: 0.32),
+                                    glow.withValues(alpha: 0),
                                   ],
                                 ),
                               ),
@@ -272,7 +311,11 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                         top: 0,
                         width: 2 * sx,
                         height: 142 * sy,
-                        child: const ColoredBox(color: Color(0xFF4A505B)),
+                        child: FadingCord(
+                          color: const Color(0xFF4A505B),
+                          width: 2 * sx,
+                          fadeLength: 48 * sy,
+                        ),
                       ),
                       // Socket.
                       Positioned(
@@ -332,14 +375,9 @@ class _HangingBulbSceneState extends State<HangingBulbScene>
                                 boxShadow: on
                                     ? [
                                         BoxShadow(
-                                          color: const Color(0x8CE0E4EA),
+                                          color: glow.withValues(alpha: 0.55),
                                           blurRadius: 40 + 10 * breathe,
                                           spreadRadius: 12 + 4 * breathe,
-                                        ),
-                                        BoxShadow(
-                                          color: const Color(0x38E0E4EA),
-                                          blurRadius: 140 + 20 * breathe,
-                                          spreadRadius: 50 + 8 * breathe,
                                         ),
                                       ]
                                     : const [],
@@ -460,8 +498,8 @@ class HangingBulbCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF2D313E) : const Color(0xFFEEF0F2))
-          : const Color(0xFF03050A),
+          ? (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFEEF0F2))
+          : const Color(0xFF050505),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
       chipBackgroundColor: isOn

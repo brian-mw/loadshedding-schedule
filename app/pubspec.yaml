@@ -56,11 +56,15 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
 
+# Generates only the default (lit bulb) launcher icon. The unlit variant the
+# app switches to during an outage - assets/icon/icon_off*.png and the
+# ic_launcher_off* Android resources - is maintained by hand alongside it.
 flutter_launcher_icons:
   android: true
+  # A plain transparent icon, deliberately not an adaptive one: an adaptive
+  # icon always gets a background plate from the launcher, and the icon is
+  # meant to be just the bulb.
   image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "#1A1410"
-  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

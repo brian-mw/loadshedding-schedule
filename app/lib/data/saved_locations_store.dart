@@ -16,9 +16,8 @@ class SavedLocation {
     this.customName,
   });
 
-  String get displayName => customName?.trim().isNotEmpty == true
-      ? customName!.trim()
-      : label;
+  String get displayName =>
+      customName?.trim().isNotEmpty == true ? customName!.trim() : label;
 
   Map<String, dynamic> toJson() => {
     'label': label,
@@ -87,6 +86,18 @@ class SavedLocationsStore {
     current.add(location);
     await _save(current);
     return SaveOutcome(SaveResult.added, current);
+  }
+
+  /// Moves [location] to the front of the list, making it the primary one.
+  Future<List<SavedLocation>> makePrimary(SavedLocation location) async {
+    final current = await load();
+    final index = current.indexWhere(
+      (l) => l.label == location.label && l.groupCode == location.groupCode,
+    );
+    if (index <= 0) return current;
+    current.insert(0, current.removeAt(index));
+    await _save(current);
+    return current;
   }
 
   Future<List<SavedLocation>> remove(SavedLocation location) async {

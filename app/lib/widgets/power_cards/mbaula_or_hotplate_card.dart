@@ -52,11 +52,17 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
     );
     _sparks = [
       for (final d in _sparkDurations)
-        AnimationController(vsync: this, duration: Duration(milliseconds: d)),
+        AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: d),
+        ),
     ];
     _steam = [
       for (final d in _steamDurations)
-        AnimationController(vsync: this, duration: Duration(milliseconds: d)),
+        AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: d),
+        ),
     ];
     _syncLoops();
   }
@@ -143,7 +149,7 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
                 color: on
                     ? (MediaQuery.platformBrightnessOf(context) ==
                               Brightness.dark
-                          ? const Color(0xFF272B37)
+                          ? const Color(0xFF29292B)
                           : const Color(0xFFE6E8EB))
                     : const Color(0xFF120C09),
               ),
@@ -152,7 +158,9 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
               left: 0,
               top: 400 * sy,
               right: 0,
-              bottom: 0,
+              // Past the canvas, down to the bottom of the screen - a tall
+              // phone otherwise shows wall colour again below the floor.
+              bottom: -1000 * sy,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
                 color: on ? const Color(0xFF6B4529) : const Color(0xFF0C0806),
@@ -409,7 +417,10 @@ class _KitchenPainter extends CustomPainter {
         Rect.fromLTWH(44 * sx, 234 * sy, 120 * sx, 16 * sy),
         Radius.circular(3 * sx),
       ),
-      Paint()..color = (on && isDark) ? const Color(0xFF6A6F7A) : const Color(0xFF2A2D33),
+      Paint()
+        ..color = (on && isDark)
+            ? const Color(0xFF6A6F7A)
+            : const Color(0xFF2A2D33),
     );
     final coilAColor = on ? const Color(0xFFFF5A2A) : const Color(0xFF4A4D53);
     final coilAPaint = Paint()
@@ -446,21 +457,24 @@ class _KitchenPainter extends CustomPainter {
 
     // Ember glow (blackout, pulsing).
     if (!on) {
+      // Drawn out to the radius where the gradient reaches zero - stopping
+      // short of it leaves a visible hard rim around the glow.
       canvas.drawCircle(
         Offset(272 * sx, 350 * sy),
-        (110 + 20 * pulse) * sx,
+        (130 + 20 * pulse) * sx,
         Paint()
-          ..shader = RadialGradient(
-            colors: [
-              Color.fromRGBO(255, 138, 42, 0.45 + 0.1 * pulse),
-              const Color(0x00FF8A2A),
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(272 * sx, 350 * sy),
-              radius: 130 * sx,
-            ),
-          ),
+          ..shader =
+              RadialGradient(
+                colors: [
+                  Color.fromRGBO(255, 138, 42, 0.45 + 0.1 * pulse),
+                  const Color(0x00FF8A2A),
+                ],
+              ).createShader(
+                Rect.fromCircle(
+                  center: Offset(272 * sx, 350 * sy),
+                  radius: (130 + 20 * pulse) * sx,
+                ),
+              ),
       );
     }
 
@@ -566,7 +580,7 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF272B37) : const Color(0xFFE6E8EB))
+          ? (isDark ? const Color(0xFF29292B) : const Color(0xFFE6E8EB))
           : const Color(0xFF120C09),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
@@ -576,14 +590,14 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
       chipTextColor: isOn ? const Color(0xFFFFD27A) : const Color(0xFFC2C7D0),
       chipDotColor: isOn ? const Color(0xFFFFC861) : const Color(0xFF5B6273),
       statusText: statusText,
-      // On a light (cream) background, amber/cream text used by the dark
-      // styles reads as near-invisible - fall back to the same dark ink the
-      // header uses whenever the card itself is light.
-      statusTextColor: litOn ? darkInk : lightInk,
+      // Unlike the header, which sits on the wall, the footer sits on the
+      // floor - brown when lit, near-black in a blackout, in either theme -
+      // so it always takes light ink.
+      statusTextColor: lightInk,
       subText: isOn
           ? 'Cooking on the hot plate · next outage $restoreTime'
           : 'Nsima on the mbaula tonight · back at $restoreTime',
-      subTextColor: litOn ? darkInkSoft : lightInkSoft,
+      subTextColor: isOn ? const Color(0xFFE8DFD3) : lightInkSoft,
       currentTime: currentTime,
       scene: MbaulaOrHotPlateScene(isOn: isOn, reduceMotion: reduceMotion),
       onViewSchedule: onViewSchedule,

@@ -6,6 +6,7 @@ import '../controllers/location_controller.dart';
 import '../controllers/schedule_controller.dart';
 import '../data/saved_locations_store.dart';
 import '../widgets/power_cards/power_card.dart';
+import '../utils/time_format.dart';
 import '../widgets/skeleton.dart';
 import 'location_detail_screen.dart';
 import 'search_screen.dart';
@@ -14,6 +15,7 @@ import 'settings_screen.dart';
 /// Each saved location is shown as a full-screen, illustrated power-status
 /// scene (see `widgets/power_cards/`). With two saved locations (the app's
 /// cap), the user swipes left/right between them.
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -55,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Touch `now` so every page rebuilds each tick, keeping status/restore
       // time live without waiting for a full data refresh.
       final now = _scheduleController.now.value;
-      final currentTime = _time(now);
+      final currentTime = formatClock(now);
       // Touch `windowsByGroup` here (not just inside itemBuilder, which GetX
       // doesn't reliably track as an Obx dependency when nested in a
       // PageView.builder) so the skeleton swaps to the real card the moment
@@ -80,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   isOn,
                 );
                 final restoreTime = transitionAt != null
-                    ? _transitionLabel(transitionAt, now)
+                    ? transitionLabel(transitionAt, now)
                     : '--:--';
                 return PowerCard(
                   key: ValueKey('${loc.groupCode}-${loc.label}'),
@@ -99,11 +101,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       _ChromeButton(
                         icon: LucideIcons.flag,
+                        label: 'Report power status',
                         onTap: () => _reportStatus(context, loc),
                       ),
                       const SizedBox(width: 8),
                       _ChromeButton(
                         icon: LucideIcons.settings,
+                        label: 'Settings',
                         onTap: () => Get.to(() => const SettingsScreen()),
                       ),
                     ],
@@ -115,9 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Positioned(
                 left: 0,
                 right: 0,
-                // Clear of the footer's status/sub-text block (bounded to a
-                // single line) and schedule button, which both sit lower.
-                bottom: 92,
+                // Clear of the footer's status/sub-text block (bounded to two
+                // lines) and schedule button, which both sit lower.
+                bottom: 108,
                 child: SafeArea(
                   top: false,
                   child: Center(
@@ -134,74 +138,73 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  String _time(DateTime d) =>
-      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-
-  static const _weekdayNames = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-
-  /// Formats a transition time, adding a day qualifier whenever it isn't
-  /// today - otherwise "08:00" tomorrow reads identically to "08:00" later
-  /// today, which is exactly the confusion this was built to avoid.
-  String _transitionLabel(DateTime at, DateTime from) {
-    final time = _time(at);
-    final atDay = DateTime(at.year, at.month, at.day);
-    final fromDay = DateTime(from.year, from.month, from.day);
-    final dayDiff = atDay.difference(fromDay).inDays;
-    if (dayDiff == 0) return time;
-    if (dayDiff == 1) return 'Tomorrow $time';
-    return '${_weekdayNames[at.weekday - 1]} $time';
-  }
-
   Future<void> _reportStatus(BuildContext context, SavedLocation loc) async {
-    final isOn = await showDialog<bool>(
+    final isOn = await showShadDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Report power status for ${loc.displayName}'),
-        content: const Text(
-          'Seeing something different from what\'s shown? Let us know.',
+      builder: (context) => ShadDialog.alert(
+        title: Text('Is the power on at ${loc.displayName}?'),
+        description: const Text(
+          'Seeing something different from what\'s shown? Your report '
+          'corrects it here and helps others in the same area.',
         ),
         actions: [
-          TextButton(
+          ShadButton.outline(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Lights are OFF'),
+            child: const Text('It\'s off'),
           ),
-          TextButton(
+          ShadButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Lights are ON'),
+            child: const Text('It\'s on'),
           ),
         ],
       ),
     );
     if (isOn == null || !context.mounted) return;
-    await _scheduleController.reportStatus(loc, isOn);
+    final toaster = ShadToaster.of(context);
+    try {
+      await _scheduleController.reportStatus(loc, isOn);
+      toaster.show(
+        ShadToast(
+          description: Text(
+            'Thanks - ${loc.displayName} marked as ${isOn ? 'on' : 'off'}.',
+          ),
+        ),
+      );
+    } catch (_) {
+      toaster.show(
+        const ShadToast.destructive(
+          description: Text('Couldn\'t send your report. Try again.'),
+        ),
+      );
+    }
   }
 }
 
 class _ChromeButton extends StatelessWidget {
   final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
-  const _ChromeButton({required this.icon, required this.onTap});
+  const _ChromeButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.35),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Icon(icon, color: Colors.white, size: 22),
+    return Tooltip(
+      message: label,
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.35),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(icon, color: Colors.white, size: 22),
+          ),
         ),
       ),
     );
@@ -222,21 +225,30 @@ class _PageIndicator extends StatelessWidget {
         final page = controller.hasClients && controller.page != null
             ? controller.page!
             : 0.0;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(count, (i) {
-            final active = (page - i).abs() < 0.5;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: active ? 18 : 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: active ? 0.9 : 0.4),
-                borderRadius: BorderRadius.circular(3),
-              ),
-            );
-          }),
+        // On the same translucent dark backing as the header buttons, so
+        // the white dots stay visible on a pale lit wall too.
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(count, (i) {
+              final active = (page - i).abs() < 0.5;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: active ? 18 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: active ? 0.9 : 0.4),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              );
+            }),
+          ),
         );
       },
     );
@@ -249,7 +261,7 @@ class _EmptyHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ESCOM Loadshedding')),
+      appBar: AppBar(title: const Text('Loadshedding Schedule')),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

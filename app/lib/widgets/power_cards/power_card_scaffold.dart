@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// The design reference (HANDOFF.md) specifies a 358x480 card. Each scene
 /// widget lays its elements out as fractions of this canvas (x/358, y/480,
@@ -33,6 +34,43 @@ class DesignCanvas extends StatelessWidget {
             width: kDesignWidth * scale,
             height: kDesignHeight * scale,
             child: builder(context, scale, scale),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A hanging cord or chain. The canvas is centred on a screen taller than
+/// it, so anything hung from the canvas's top edge would start abruptly in
+/// mid-air just below the header - instead the top [fadeLength] of the line
+/// fades out, so it reads as rising out of sight.
+class FadingCord extends StatelessWidget {
+  final Color color;
+  final double width;
+  final double fadeLength;
+
+  const FadingCord({
+    super.key,
+    required this.color,
+    required this.width,
+    required this.fadeLength,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fade = (fadeLength / constraints.maxHeight).clamp(0.0, 1.0);
+        return Container(
+          width: width,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [color.withValues(alpha: 0), color, color],
+              stops: [0, fade, 1],
+            ),
           ),
         );
       },
@@ -90,8 +128,34 @@ class PowerCardScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     // The card is informational, not a single giant button - tapping it does
     // nothing; viewing the schedule is its own explicit, dedicated control.
+    // System-bar icons have to contrast with the card behind them: dark on
+    // the pale light-theme lit wall, light everywhere else. The navigation
+    // bar is transparent so the scene runs to the bottom of the screen; its
+    // icons follow the footer's ink, since some scenes have a dark floor
+    // under a pale wall.
+    final darkInk =
+        ThemeData.estimateBrightnessForColor(inkColor) == Brightness.dark;
+    final darkFooterInk =
+        ThemeData.estimateBrightnessForColor(statusTextColor) ==
+        Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (darkInk ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light)
+          .copyWith(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarContrastEnforced: false,
+            systemNavigationBarIconBrightness: darkFooterInk
+                ? Brightness.dark
+                : Brightness.light,
+          ),
+      child: _buildCard(context),
+    );
+  }
+
+  Widget _buildCard(BuildContext context) {
     return Semantics(
-      label: '$areaName, $groupLabel, power is ${isOn ? 'on' : 'off'}. $subText',
+      label:
+          '$areaName, $groupLabel, power is ${isOn ? 'on' : 'off'}. $subText',
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 600),
         color: backgroundColor,
@@ -176,7 +240,14 @@ class PowerCardScaffold extends StatelessWidget {
                                     fontWeight: FontWeight.w800,
                                     color: statusTextColor,
                                   ),
-                                  child: Text(statusText),
+                                  // Kept to one line (shrinking a long
+                                  // phrase if need be) so the footer has a
+                                  // fixed height the page dots can clear.
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(statusText, maxLines: 1),
+                                  ),
                                 ),
                                 const SizedBox(height: 2),
                                 AnimatedDefaultTextStyle(
@@ -187,7 +258,7 @@ class PowerCardScaffold extends StatelessWidget {
                                   ),
                                   child: Text(
                                     subText,
-                                    maxLines: 1,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),

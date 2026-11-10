@@ -79,6 +79,11 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
   @override
   Widget build(BuildContext context) {
     final on = widget.isOn;
+    // Light has to read brighter than the wall it falls on: near-white on
+    // the pale light-theme wall, a cool grey on the dark-theme one.
+    final glow = MediaQuery.platformBrightnessOf(context) == Brightness.dark
+        ? const Color(0xFFE0E4EA)
+        : Colors.white;
     return DesignCanvas(
       builder: (context, sx, sy) {
         return Stack(
@@ -109,17 +114,25 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
                 );
               },
             ),
-            // Bulb room-light (lights-on only).
-            Positioned.fill(
+            // Bulb room-light (lights-on only), centred on the bulb. Sized to
+            // fade out fully on its own rather than filling the canvas: a
+            // canvas-sized box cut the glow off in a hard line at the canvas
+            // edges, right under the header on a tall phone.
+            Positioned(
+              left: (220 - 390) * sx,
+              top: (153 - 390) * sy,
+              width: 780 * sx,
+              height: 780 * sy,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
                 opacity: on ? 1 : 0,
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: RadialGradient(
-                      center: Alignment(0.23, -0.4),
-                      radius: 1.1,
-                      colors: [Color(0x59E0E4EA), Color(0x00E0E4EA)],
+                      colors: [
+                        glow.withValues(alpha: 0.35),
+                        glow.withValues(alpha: 0),
+                      ],
                     ),
                   ),
                 ),
@@ -131,7 +144,11 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
               top: 0,
               width: 2 * sx,
               height: 110 * sy,
-              child: const ColoredBox(color: Color(0xFF4A505B)),
+              child: FadingCord(
+                color: const Color(0xFF4A505B),
+                width: 2 * sx,
+                fadeLength: 48 * sy,
+              ),
             ),
             Positioned(
               left: 207 * sx,
@@ -172,52 +189,21 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
                     stops: const [0.0, 0.35, 0.75, 1.0],
                   ),
                   boxShadow: on
-                      ? const [
+                      ? [
                           BoxShadow(
-                            color: Color(0x8CE0E4EA),
+                            color: glow.withValues(alpha: 0.55),
                             blurRadius: 30,
                             spreadRadius: 10,
-                          ),
-                          BoxShadow(
-                            color: Color(0x38E0E4EA),
-                            blurRadius: 110,
-                            spreadRadius: 40,
                           ),
                         ]
                       : const [],
                 ),
               ),
             ),
-            // Table and candle - a physical object that only makes sense to
-            // show during a blackout; with the bulb already lit, leaving it
+            // The candle is a physical object that only makes sense to show
+            // during a blackout; with the bulb already lit, leaving it
             // visible (just recoloured) read as clutter, so it fades out
             // entirely once the lights are on instead.
-            Positioned(
-              left: 24 * sx,
-              top: 347 * sy,
-              width: 310 * sx,
-              height: 56 * sy,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 400),
-                opacity: on ? 0 : 1,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      center: Alignment(0.2, -0.2),
-                      colors: [Color(0xFF4A3424), Color(0xFF140F0B)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black54,
-                        blurRadius: 30,
-                        offset: Offset(0, 18),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
             // Candle wax, wick and flame.
             Positioned(
               left: 120 * sx,
@@ -228,122 +214,122 @@ class _CandleOrBulbSceneState extends State<CandleOrBulbScene>
                 duration: const Duration(milliseconds: 400),
                 opacity: on ? 0 : 1,
                 child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    width: 34 * sx,
-                    height: 96 * sy,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6 * sx),
-                      gradient: LinearGradient(
-                        colors: on
-                            ? const [
-                                Color(0xFFE9E1D2),
-                                Color(0xFFFBF7EE),
-                                Color(0xFFD6CBB6),
-                              ]
-                            : const [
-                                Color(0xFF6B5A44),
-                                Color(0xFFE8C68E),
-                                Color(0xFF5A4A38),
-                              ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    top: -6 * sy,
-                    width: 34 * sx,
-                    height: 12 * sy,
-                    child: AnimatedContainer(
+                  clipBehavior: Clip.none,
+                  children: [
+                    AnimatedContainer(
                       duration: const Duration(milliseconds: 400),
+                      width: 34 * sx,
+                      height: 96 * sy,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: on
-                            ? const Color(0xFFF3EDE0)
-                            : const Color(0xFFF5D9A0),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 16 * sx,
-                    top: -14 * sy,
-                    width: 2 * sx,
-                    height: 10 * sy,
-                    child: const ColoredBox(color: Color(0xFF2A2420)),
-                  ),
-                  Positioned(
-                    left: 9 * sx,
-                    top: -46 * sy,
-                    width: 16 * sx,
-                    height: 34 * sy,
-                    child: AnimatedBuilder(
-                      animation: _flicker,
-                      builder: (context, child) {
-                        final t = _flicker.value * 2 * math.pi;
-                        final scaleX = on ? 1.0 : 1.0 + 0.08 * math.sin(t);
-                        final scaleY = on ? 1.0 : 1.0 - 0.06 * math.sin(t);
-                        final rotate = on ? 0.0 : 0.05 * math.sin(t + 1.2);
-                        return AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: on ? 0 : 1,
-                          child: Transform(
-                            alignment: Alignment.bottomCenter,
-                            transform: Matrix4.identity()
-                              ..rotateZ(rotate)
-                              ..scaleByDouble(scaleX, scaleY, 1, 1),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            center: Alignment(0, 0.5),
-                            colors: [
-                              Colors.white,
-                              Color(0xFFFFE9A8),
-                              Color(0xFFFFB23F),
-                              Color(0x00FF781E),
-                            ],
-                            stops: [0.0, 0.25, 0.6, 1.0],
-                          ),
+                        borderRadius: BorderRadius.circular(6 * sx),
+                        gradient: LinearGradient(
+                          colors: on
+                              ? const [
+                                  Color(0xFFE9E1D2),
+                                  Color(0xFFFBF7EE),
+                                  Color(0xFFD6CBB6),
+                                ]
+                              : const [
+                                  Color(0xFF6B5A44),
+                                  Color(0xFFE8C68E),
+                                  Color(0xFF5A4A38),
+                                ],
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    left: 10 * sx,
-                    top: -60 * sy,
-                    width: 14 * sx,
-                    height: 40 * sy,
-                    child: AnimatedBuilder(
-                      animation: _smoke,
-                      builder: (context, child) {
-                        if (_smoke.value == 0) return const SizedBox.shrink();
-                        final v = _smoke.value;
-                        return Opacity(
-                          opacity: (0.9 * (1 - v)).clamp(0, 1),
-                          child: Transform.translate(
-                            offset: Offset(0, -60 * v * sy),
-                            child: Transform.scale(
-                              scaleX: 1 + 1.2 * v,
-                              child: child,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
+                    Positioned(
+                      left: 0,
+                      top: -6 * sy,
+                      width: 34 * sx,
+                      height: 12 * sy,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0x59C8CDD7),
+                          color: on
+                              ? const Color(0xFFF3EDE0)
+                              : const Color(0xFFF5D9A0),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      left: 16 * sx,
+                      top: -14 * sy,
+                      width: 2 * sx,
+                      height: 10 * sy,
+                      child: const ColoredBox(color: Color(0xFF2A2420)),
+                    ),
+                    Positioned(
+                      left: 9 * sx,
+                      top: -46 * sy,
+                      width: 16 * sx,
+                      height: 34 * sy,
+                      child: AnimatedBuilder(
+                        animation: _flicker,
+                        builder: (context, child) {
+                          final t = _flicker.value * 2 * math.pi;
+                          final scaleX = on ? 1.0 : 1.0 + 0.08 * math.sin(t);
+                          final scaleY = on ? 1.0 : 1.0 - 0.06 * math.sin(t);
+                          final rotate = on ? 0.0 : 0.05 * math.sin(t + 1.2);
+                          return AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: on ? 0 : 1,
+                            child: Transform(
+                              alignment: Alignment.bottomCenter,
+                              transform: Matrix4.identity()
+                                ..rotateZ(rotate)
+                                ..scaleByDouble(scaleX, scaleY, 1, 1),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              center: Alignment(0, 0.5),
+                              colors: [
+                                Colors.white,
+                                Color(0xFFFFE9A8),
+                                Color(0xFFFFB23F),
+                                Color(0x00FF781E),
+                              ],
+                              stops: [0.0, 0.25, 0.6, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 10 * sx,
+                      top: -60 * sy,
+                      width: 14 * sx,
+                      height: 40 * sy,
+                      child: AnimatedBuilder(
+                        animation: _smoke,
+                        builder: (context, child) {
+                          if (_smoke.value == 0) return const SizedBox.shrink();
+                          final v = _smoke.value;
+                          return Opacity(
+                            opacity: (0.9 * (1 - v)).clamp(0, 1),
+                            child: Transform.translate(
+                              offset: Offset(0, -60 * v * sy),
+                              child: Transform.scale(
+                                scaleX: 1 + 1.2 * v,
+                                child: child,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0x59C8CDD7),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -392,8 +378,8 @@ class CandleOrBulbCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF2A2E3B) : const Color(0xFFEBEDEF))
-          : const Color(0xFF07060A),
+          ? (isDark ? const Color(0xFF2B2B2D) : const Color(0xFFEBEDEF))
+          : const Color(0xFF080706),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
       chipBackgroundColor: isOn

@@ -9,6 +9,7 @@ import '../data/schedule_cache_store.dart';
 import '../data/self_report_store.dart';
 import '../models/power_window.dart';
 import '../notifications/notification_scheduler.dart';
+import '../platform/app_icon.dart';
 
 class ScheduleController extends GetxController {
   final ApiRepository _api = ApiRepository();
@@ -38,8 +39,8 @@ class ScheduleController extends GetxController {
 
   final RxBool statusNotificationsEnabled = false.obs;
   final RxBool statusNotificationsPersistent = false.obs;
-  final RxInt transitionLeadMinutes = NotificationPrefsStore.defaultLeadMinutes
-      .obs;
+  final RxInt transitionLeadMinutes =
+      NotificationPrefsStore.defaultLeadMinutes.obs;
   // Tracks each location's last-notified on/off state, so the status
   // notification only re-posts when the status actually changes, not on
   // every 30s tick/data refresh.
@@ -57,6 +58,7 @@ class ScheduleController extends GetxController {
       // moment `now` crosses a window boundary) gets its notification
       // within 30s instead of waiting for the location list to change.
       _refreshStatusNotifications();
+      _syncAppIcon();
       // A slower full refetch alongside it, so a transition someone else
       // reported (community status) is also picked up without the user
       // having to add/remove a location to force a reload.
@@ -146,6 +148,38 @@ class ScheduleController extends GetxController {
     }
   }
 
+  // What was last handed to the launcher icon, so the 30s tick only talks
+  // to the platform when something actually changed.
+  String? _lastIconSignature;
+
+  /// Keeps the launcher icon (a lit or unlit bulb) in step with the primary
+  /// - first saved - location, including the schedule's upcoming changes so
+  /// the icon can keep flipping while the app is closed.
+  Future<void> _syncAppIcon() async {
+    if (_knownLocations.isEmpty) return;
+    final primary = _knownLocations.first;
+    final windows = windowsByGroup[primary.groupCode];
+    if (windows == null) return;
+    final lit = effectiveIsOn(primary);
+    final t = DateTime.now();
+    final upcoming = windows.where((w) => w.startDateTime.isAfter(t)).toList()
+      ..sort((a, b) => a.startDateTime.compareTo(b.startDateTime));
+    final transitions = <(DateTime, bool)>[];
+    var state = lit;
+    for (final w in upcoming) {
+      if (w.isOn == state) continue;
+      transitions.add((w.startDateTime, w.isOn));
+      state = w.isOn;
+    }
+    final signature = [
+      lit,
+      for (final t in transitions) '${t.$1.millisecondsSinceEpoch}:${t.$2}',
+    ].join('|');
+    if (signature == _lastIconSignature) return;
+    _lastIconSignature = signature;
+    await AppIcon.update(lit: lit, transitions: transitions);
+  }
+
   @override
   void onClose() {
     _tickTimer?.cancel();
@@ -153,7 +187,13 @@ class ScheduleController extends GetxController {
   }
 
   Future<void> refreshFor(List<SavedLocation> locations) async {
-    if (locations.isEmpty) return;
+    if (locations.isEmpty) {
+      // Nothing to follow any more - back to the default lit bulb.
+      _knownLocations = [];
+      _lastIconSignature = null;
+      await AppIcon.update(lit: true, transitions: const []);
+      return;
+    }
     _knownLocations = locations;
     isLoading.value = true;
     try {
@@ -211,6 +251,7 @@ class ScheduleController extends GetxController {
         }
       }
       await _refreshStatusNotifications();
+      await _syncAppIcon();
     } finally {
       isLoading.value = false;
     }
@@ -248,6 +289,7 @@ class ScheduleController extends GetxController {
     _communityStatus[key] = result;
     windowsByGroup.refresh();
     await _refreshStatusNotifications();
+    await _syncAppIcon();
     return result;
   }
 

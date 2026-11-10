@@ -90,16 +90,18 @@ class _DeskFanSceneState extends State<DeskFanScene>
                 color: on
                     ? (MediaQuery.platformBrightnessOf(context) ==
                               Brightness.dark
-                          ? const Color(0xFF292D3C)
+                          ? const Color(0xFF2A2A2C)
                           : const Color(0xFFE8EAED))
-                    : const Color(0xFF03050A),
+                    : const Color(0xFF050505),
               ),
             ),
             Positioned(
               left: 0,
               right: 0,
               top: 250 * sy,
-              bottom: 0,
+              // Past the canvas, down to the bottom of the screen - a tall
+              // phone otherwise shows wall colour again below the desk.
+              bottom: -1000 * sy,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 400),
                 color: on ? const Color(0xFF7A5236) : const Color(0xFF0A0807),
@@ -198,9 +200,12 @@ class _DeskFanSceneState extends State<DeskFanScene>
                       top: 16 * sy,
                       width: 30 * sx,
                       height: 38 * sy,
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F1EC),
+                          color: on
+                              ? const Color(0xFFF3F1EC)
+                              : const Color(0xFF22252B),
                           borderRadius: BorderRadius.circular(4 * sx),
                           boxShadow: const [
                             BoxShadow(color: Colors.black38, blurRadius: 4),
@@ -213,7 +218,15 @@ class _DeskFanSceneState extends State<DeskFanScene>
               ),
             ),
             Positioned.fill(
-              child: CustomPaint(painter: _FanCablePainter(sx: sx, sy: sy)),
+              child: TweenAnimationBuilder<Color?>(
+                duration: const Duration(milliseconds: 400),
+                tween: ColorTween(
+                  end: on ? const Color(0xFFE9E6DF) : const Color(0xFF22252B),
+                ),
+                builder: (context, color, _) => CustomPaint(
+                  painter: _FanCablePainter(sx: sx, sy: sy, color: color!),
+                ),
+              ),
             ),
             // Base/foot - stays put on the desk; only the head above it sweeps.
             Positioned(
@@ -361,7 +374,12 @@ class _DeskFanSceneState extends State<DeskFanScene>
 class _FanCablePainter extends CustomPainter {
   final double sx;
   final double sy;
-  const _FanCablePainter({required this.sx, required this.sy});
+  final Color color;
+  const _FanCablePainter({
+    required this.sx,
+    required this.sy,
+    required this.color,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -372,7 +390,7 @@ class _FanCablePainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFFE9E6DF)
+        ..color = color
         ..style = PaintingStyle.stroke
         ..strokeWidth = 4 * sx
         ..strokeCap = StrokeCap.round,
@@ -380,7 +398,8 @@ class _FanCablePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _FanCablePainter oldDelegate) => false;
+  bool shouldRepaint(covariant _FanCablePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 /// Draws the fan's blades (behind) and wire guard (in front), both inside
@@ -425,7 +444,11 @@ class _FanHeadPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.025;
     canvas.drawCircle(center, radius * 0.97, ringPaint);
-    canvas.drawCircle(center, radius * 0.62, ringPaint..strokeWidth = size.width * 0.015);
+    canvas.drawCircle(
+      center,
+      radius * 0.62,
+      ringPaint..strokeWidth = size.width * 0.015,
+    );
     final spokePaint = Paint()
       ..color = grilleColor
       ..style = PaintingStyle.stroke
@@ -465,8 +488,16 @@ class _AirflowPainter extends CustomPainter {
       final y = size.height * (0.2 + i * 0.3);
       final path = Path()
         ..moveTo(x, y)
-        ..quadraticBezierTo(x + size.width * 0.1, y - 6, x + size.width * 0.2, y);
-      canvas.drawPath(path, paint..color = Colors.white.withValues(alpha: opacity));
+        ..quadraticBezierTo(
+          x + size.width * 0.1,
+          y - 6,
+          x + size.width * 0.2,
+          y,
+        );
+      canvas.drawPath(
+        path,
+        paint..color = Colors.white.withValues(alpha: opacity),
+      );
     }
   }
 
@@ -513,8 +544,8 @@ class DeskFanCard extends StatelessWidget {
       areaName: areaName,
       groupLabel: groupLabel,
       backgroundColor: isOn
-          ? (isDark ? const Color(0xFF292D3C) : const Color(0xFFE8EAED))
-          : const Color(0xFF03050A),
+          ? (isDark ? const Color(0xFF2A2A2C) : const Color(0xFFE8EAED))
+          : const Color(0xFF050505),
       inkColor: litOn ? darkInk : lightInk,
       inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
       chipBackgroundColor: isOn
@@ -523,11 +554,14 @@ class DeskFanCard extends StatelessWidget {
       chipTextColor: isOn ? const Color(0xFFFFD27A) : const Color(0xFFC2C7D0),
       chipDotColor: isOn ? const Color(0xFFFFC861) : const Color(0xFF5B6273),
       statusText: statusText,
-      statusTextColor: litOn ? darkInk : lightInk,
+      // Unlike the header, which sits on the wall, the footer sits on the
+      // desk - brown when lit, near-black in a blackout, in either theme -
+      // so it always takes light ink.
+      statusTextColor: lightInk,
       subText: isOn
           ? 'Fan running · next outage $restoreTime'
           : 'Fan stopped · back at $restoreTime',
-      subTextColor: litOn ? darkInkSoft : lightInkSoft,
+      subTextColor: isOn ? const Color(0xFFE8DFD3) : lightInkSoft,
       currentTime: currentTime,
       scene: DeskFanScene(isOn: isOn, reduceMotion: reduceMotion),
       onViewSchedule: onViewSchedule,

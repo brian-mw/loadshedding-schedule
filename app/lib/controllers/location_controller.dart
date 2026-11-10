@@ -39,6 +39,10 @@ class LocationController extends GetxController {
   final RxList<SavedLocation> savedLocations = <SavedLocation>[].obs;
   final RxList<LocationEntry> searchResults = <LocationEntry>[].obs;
   final RxBool isSearching = false.obs;
+  final RxBool searchFailed = false.obs;
+  // Bumped per search so a slow response to an older query can't overwrite
+  // the results of a newer one.
+  int _searchToken = 0;
   final RxBool isLoaded = false.obs;
 
   PowerCardStyle cardStyleFor(SavedLocation location) {
@@ -55,7 +59,9 @@ class LocationController extends GetxController {
         .map((other) => _cardStyles['${other.groupCode}-${other.label}'])
         .whereType<PowerCardStyle>()
         .toSet();
-    final pool = PowerCardStyle.values.where((s) => !taken.contains(s)).toList();
+    final pool = PowerCardStyle.values
+        .where((s) => !taken.contains(s))
+        .toList();
     final choices = pool.isNotEmpty ? pool : PowerCardStyle.values;
     final style = choices[_random.nextInt(choices.length)];
     _cardStyles[key] = style;
@@ -86,19 +92,31 @@ class LocationController extends GetxController {
   }
 
   Future<void> search(String query) async {
+    final token = ++_searchToken;
+    searchFailed.value = false;
     if (query.trim().length < 2) {
       searchResults.clear();
+      isSearching.value = false;
       return;
     }
     isSearching.value = true;
     try {
-      searchResults.value = await _api.searchLocations(query.trim());
+      final results = await _api.searchLocations(query.trim());
+      if (token != _searchToken) return;
+      searchResults.value = results;
+    } catch (_) {
+      if (token != _searchToken) return;
+      searchResults.clear();
+      searchFailed.value = true;
     } finally {
-      isSearching.value = false;
+      if (token == _searchToken) isSearching.value = false;
     }
   }
 
-  Future<SaveResult> saveLocation(LocationEntry entry, {String? customName}) async {
+  Future<SaveResult> saveLocation(
+    LocationEntry entry, {
+    String? customName,
+  }) async {
     final saved = SavedLocation(
       label: entry.location,
       groupCode: entry.groupCode,
@@ -108,6 +126,10 @@ class LocationController extends GetxController {
     final outcome = await _store.add(saved);
     savedLocations.value = outcome.locations;
     return outcome.result;
+  }
+
+  Future<void> makePrimary(SavedLocation location) async {
+    savedLocations.value = await _store.makePrimary(location);
   }
 
   Future<void> removeLocation(SavedLocation location) async {
