@@ -122,7 +122,7 @@ class ScheduleController extends GetxController {
       await _notifications.showStatusNotification(
         id: _statusId(loc),
         title: '${loc.displayName} · ${isOn ? 'Lights on' : 'Blackout'}',
-        body: isOn ? 'Supply normal' : 'Power is currently off',
+        body: isOn ? 'All good' : 'Power is currently off',
         persistent: statusNotificationsPersistent.value,
         isOn: isOn,
       );

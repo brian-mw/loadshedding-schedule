@@ -400,24 +400,30 @@ class HangingBulbCard extends StatelessWidget {
     final darkInkSoft = const Color(0xFF52565C);
     final lightInk = const Color(0xFFF3F5F9);
     final lightInkSoft = const Color(0xFFA9B0BE);
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    // Dark-theme users get a dimmer "lit" wall instead of a bright white one -
+    // still clearly brighter than blackout, just not jarring at night.
+    final litOn = isOn && !isDark;
     return PowerCardScaffold(
       isOn: isOn,
       areaName: areaName,
       groupLabel: groupLabel,
-      backgroundColor: isOn ? const Color(0xFFEEF0F2) : const Color(0xFF03050A),
-      inkColor: isOn ? darkInk : lightInk,
-      inkSoftColor: isOn ? darkInkSoft : lightInkSoft,
+      backgroundColor: isOn
+          ? (isDark ? const Color(0xFF4C5059) : const Color(0xFFEEF0F2))
+          : const Color(0xFF03050A),
+      inkColor: litOn ? darkInk : lightInk,
+      inkSoftColor: litOn ? darkInkSoft : lightInkSoft,
       chipBackgroundColor: isOn
           ? const Color(0xE11C1E21)
           : const Color(0x14FFFFFF),
       chipTextColor: isOn ? const Color(0xFFFFD27A) : const Color(0xFFC2C7D0),
       chipDotColor: isOn ? const Color(0xFFFFC861) : const Color(0xFF5B6273),
       statusText: statusText,
-      statusTextColor: isOn ? darkInk : lightInk,
+      statusTextColor: litOn ? darkInk : lightInk,
       subText: isOn
-          ? 'Supply normal · next outage $restoreTime'
+          ? 'All good · next outage $restoreTime'
           : 'Back at $restoreTime',
-      subTextColor: isOn ? darkInkSoft : lightInkSoft,
+      subTextColor: litOn ? darkInkSoft : lightInkSoft,
       currentTime: currentTime,
       scene: HangingBulbScene(isOn: isOn, reduceMotion: reduceMotion),
       onViewSchedule: onViewSchedule,
