@@ -8,6 +8,8 @@ class NotificationPrefsStore {
   static const _persistentKey = 'status_notification_persistent_v1';
   static const _leadTimeKey = 'transition_lead_minutes_v1';
   static const defaultLeadMinutes = 60;
+  /// Sentinel value meaning "transition alerts are off".
+  static const offLeadMinutes = -1;
 
   Future<int> loadLeadMinutes() async {
     final prefs = await SharedPreferences.getInstance();

@@ -55,6 +55,9 @@ class NotificationScheduler {
     for (var i = 0; i < 10; i++) {
       await _plugin.cancel(id: notificationIdBase + i);
     }
+    // A negative lead time is the sentinel for "alerts off" - leave the
+    // slots cancelled above and schedule nothing new.
+    if (leadTime.isNegative) return;
 
     final android = _plugin
         .resolvePlatformSpecificImplementation<

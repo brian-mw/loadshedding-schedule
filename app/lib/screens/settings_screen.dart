@@ -5,16 +5,57 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../constants/group_colors.dart';
 import '../controllers/location_controller.dart';
 import '../controllers/schedule_controller.dart';
+import '../data/notification_prefs_store.dart';
 import '../data/saved_locations_store.dart';
 import 'search_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  Future<void> _confirmRemove(
+    BuildContext context,
+    LocationController controller,
+    SavedLocation loc,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Remove ${loc.displayName}?'),
+        content: const Text(
+          'You\'ll stop getting its schedule and status notifications.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await controller.removeLocation(loc);
+    }
+  }
+
+  static const _leadOptions = {
+    NotificationPrefsStore.offLeadMinutes: 'Off',
+    15: '15 minutes before',
+    30: '30 minutes before',
+    60: '1 hour before',
+    120: '2 hours before',
+    180: '3 hours before',
+    240: '4 hours before',
+  };
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<LocationController>();
     final scheduleController = Get.find<ScheduleController>();
+    final theme = ShadTheme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -27,10 +68,7 @@ class SettingsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Saved locations',
-                  style: ShadTheme.of(context).textTheme.h4,
-                ),
+                _SectionHeader(icon: LucideIcons.mapPin, title: 'Saved locations'),
                 ShadButton.outline(
                   onPressed: atLimit
                       ? null
@@ -50,7 +88,7 @@ class SettingsScreen extends StatelessWidget {
             if (saved.isEmpty)
               Text(
                 'No saved locations yet',
-                style: ShadTheme.of(context).textTheme.muted,
+                style: theme.textTheme.muted,
               )
             else
               ...saved.map(
@@ -62,14 +100,21 @@ class SettingsScreen extends StatelessWidget {
                             child: Row(
                               children: [
                                 Container(
-                                  width: 10,
-                                  height: 10,
+                                  width: 36,
+                                  height: 36,
                                   decoration: BoxDecoration(
-                                    color: colorForSubgroup(loc.groupCode),
+                                    color: colorForSubgroup(
+                                      loc.groupCode,
+                                    ).withValues(alpha: 0.15),
                                     shape: BoxShape.circle,
                                   ),
+                                  child: Icon(
+                                    LucideIcons.mapPin,
+                                    size: 18,
+                                    color: colorForSubgroup(loc.groupCode),
+                                  ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -77,28 +122,27 @@ class SettingsScreen extends StatelessWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        '${loc.displayName} (${loc.groupCode})',
-                                        style: ShadTheme.of(
-                                          context,
-                                        ).textTheme.p,
-                                      ),
-                                      if (loc.customName?.trim().isNotEmpty ==
-                                          true)
-                                        Text(
-                                          loc.label,
-                                          style: ShadTheme.of(
-                                            context,
-                                          ).textTheme.muted,
+                                        loc.displayName,
+                                        style: theme.textTheme.p.copyWith(
+                                          fontWeight: FontWeight.w600,
                                         ),
+                                      ),
+                                      Text(
+                                        loc.customName?.trim().isNotEmpty ==
+                                                true
+                                            ? '${loc.label} · Group ${loc.groupCode}'
+                                            : 'Group ${loc.groupCode}',
+                                        style: theme.textTheme.muted,
+                                      ),
                                     ],
                                   ),
                                 ),
                                 ShadButton.ghost(
                                   onPressed: () =>
-                                      controller.removeLocation(loc),
+                                      _confirmRemove(context, controller, loc),
                                   child: const Icon(
                                     LucideIcons.trash2,
-                                    size: 22,
+                                    size: 20,
                                   ),
                                 ),
                               ],
@@ -109,13 +153,16 @@ class SettingsScreen extends StatelessWidget {
                           .slideX(begin: 0.05, end: 0),
                 ),
               ),
-            const SizedBox(height: 24),
-            Text('Transition alerts', style: ShadTheme.of(context).textTheme.h4),
+            const SizedBox(height: 28),
+            _SectionHeader(
+              icon: LucideIcons.bellRing,
+              title: 'Transition alerts',
+            ),
             const SizedBox(height: 4),
             Text(
               'How much notice to give before a saved location\'s power is '
               'about to go on or off.',
-              style: ShadTheme.of(context).textTheme.muted,
+              style: theme.textTheme.muted,
             ),
             const SizedBox(height: 12),
             Obx(
@@ -124,17 +171,18 @@ class SettingsScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     const Expanded(child: Text('Alert me')),
-                    DropdownButton<int>(
-                      value: scheduleController.transitionLeadMinutes.value,
-                      underline: const SizedBox.shrink(),
-                      items: const [
-                        DropdownMenuItem(value: 15, child: Text('15 minutes before')),
-                        DropdownMenuItem(value: 30, child: Text('30 minutes before')),
-                        DropdownMenuItem(value: 60, child: Text('1 hour before')),
-                        DropdownMenuItem(value: 120, child: Text('2 hours before')),
-                        DropdownMenuItem(value: 180, child: Text('3 hours before')),
-                        DropdownMenuItem(value: 240, child: Text('4 hours before')),
-                      ],
+                    ShadSelect<int>(
+                      // Forces a fresh state whenever the backing value
+                      // changes from outside this widget (e.g. once the
+                      // persisted setting finishes loading asynchronously),
+                      // since ShadSelect only reads initialValue once.
+                      key: ValueKey(scheduleController.transitionLeadMinutes.value),
+                      initialValue: scheduleController.transitionLeadMinutes.value,
+                      options: _leadOptions.entries
+                          .map((e) => ShadOption(value: e.key, child: Text(e.value)))
+                          .toList(),
+                      selectedOptionBuilder: (context, value) =>
+                          Text(_leadOptions[value] ?? 'Off'),
                       onChanged: (value) {
                         if (value != null) {
                           scheduleController.setTransitionLeadMinutes(value);
@@ -145,67 +193,75 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Status notification',
-              style: ShadTheme.of(context).textTheme.h4,
-            ),
+            const SizedBox(height: 28),
+            _SectionHeader(icon: LucideIcons.bell, title: 'Status notification'),
             const SizedBox(height: 4),
             Text(
               'Always show current power status in the notification shade.',
-              style: ShadTheme.of(context).textTheme.muted,
+              style: theme.textTheme.muted,
             ),
             const SizedBox(height: 12),
             Obx(
               () => ShadCard(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Show status notification'),
+                    ShadSwitch(
                       value: scheduleController.statusNotificationsEnabled.value,
                       onChanged: scheduleController.setStatusNotificationsEnabled,
+                      label: const Text('Show status notification'),
                     ),
-                    if (scheduleController.statusNotificationsEnabled.value)
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Make it persistent'),
-                        subtitle: const Text(
-                          'Can\'t be swiped away - always on until you turn this off',
-                        ),
-                        value:
-                            scheduleController
-                                .statusNotificationsPersistent
-                                .value,
+                    if (scheduleController.statusNotificationsEnabled.value) ...[
+                      const SizedBox(height: 16),
+                      ShadSwitch(
+                        value: scheduleController
+                            .statusNotificationsPersistent
+                            .value,
                         onChanged:
                             scheduleController.setStatusNotificationsPersistent,
+                        label: const Text('Make it persistent'),
+                        sublabel: const Text(
+                          'Can\'t be swiped away - always on until you turn '
+                          'this off',
+                        ),
                       ),
+                    ],
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(LucideIcons.info, size: 13),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Schedule from ESCOM\'s published programme, not a live '
-                    'reading - actual power may differ from what\'s shown.',
-                    style: ShadTheme.of(context).textTheme.small,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 28),
+            ShadAlert(
+              icon: const Icon(LucideIcons.info, size: 16),
+              title: const Text('Not a live reading'),
+              description: const Text(
+                'Schedule from ESCOM\'s published programme - actual power '
+                'may differ from what\'s shown.',
+              ),
             ),
           ],
         );
       }),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _SectionHeader({required this.icon, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: ShadTheme.of(context).colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(title, style: ShadTheme.of(context).textTheme.h4),
+      ],
     );
   }
 }
