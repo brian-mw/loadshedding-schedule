@@ -1,25 +1,17 @@
 # ESCOM Malawi loadshedding-programme parser
 
-ESCOM (Malawi's electricity utility) publishes a weekly loadshedding
-timetable as a PDF (an Excel export) with two parts:
+The project uses `pipeline/parse_escom_pdf.py` to extract structured information from ESCOM Malawi's weekly load-shedding PDF.
 
-1. A colour-coded grid: for each day, each customer group (A/B/C
-   residential, D/E/F industrial) x 5 time slots, coloured cells mean the
-   group has power, black cells mean it doesn't. Groups A/B/C are each
-   split in two (A1/A2, B1/B2, C1/C2) and the two halves sometimes take
-   turns within the same slot.
-2. A "LOAD SHEDDING GROUPS" table mapping each group+region to named
-   substations/feeders and the neighbourhoods/areas they cover.
+It solves two main problems:
 
-Both parts are plain vector text/drawing objects in the PDF (not a scanned
-image), so they can be parsed directly with coordinates - no OCR needed.
-Colour is meaningful (see the PDF's own note: GREEN/YELLOW/RED = power on,
-BLACK = power off), so a naive text extraction loses the on/off signal and
-also reads the group-location table in the wrong order (PDF text objects
-are emitted in drawing order, not visual order). `pipeline/parse_escom_pdf.py`
-handles both issues: it uses word/line coordinates and the table's own grid
-border lines to reconstruct rows, and renders the page to sample each
-schedule cell's actual fill colour.
+- **Colour recognition:** Samples the actual fill colour of schedule cells to determine whether electricity is ON (green, yellow, red) or OFF (black).
+- **Table reconstruction:** Uses word coordinates, line positions and grid borders to correctly reconstruct the schedule and the group-location table, which ordinary PDF text extraction reads incorrectly.
+
+The parser handles both the weekly power schedule (including residential subgroups A1/A2, B1/B2 and C1/C2) and the table mapping customer groups to substations, feeders and neighbourhoods.
+
+## How it Works
+
+See [How it works](/docs/how_it_works.md)
 
 ## Usage
 
@@ -45,9 +37,7 @@ This writes to the output directory:
 
 The parsed CSVs are loaded into Postgres (`pipeline/load_to_db.py`) and
 served to the mobile app by a Fastify (Node/TypeScript) API in `api/`, which
-is the only thing the app talks to. See `api/README` (package.json scripts) for running it, and
-`.github/workflows/weekly-scrape.yml` for how new weeks get scraped, parsed,
-and loaded automatically (daily, since ESCOM's publish day varies).
+is the only thing the app talks to.
 
 ## Local Development
 
