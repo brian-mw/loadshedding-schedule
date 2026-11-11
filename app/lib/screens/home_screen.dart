@@ -261,7 +261,12 @@ class _EmptyHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Loadshedding Schedule')),
+      // No back button on this screen, so the theme's titleSpacing of 0 would
+      // put the title flush against the screen edge.
+      appBar: AppBar(
+        titleSpacing: 16,
+        title: const Text('Loadshedding Schedule'),
+      ),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
