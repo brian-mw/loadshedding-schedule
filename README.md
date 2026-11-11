@@ -37,14 +37,7 @@ This writes to the output directory:
   duration, status, fill_color`. `label` is the text actually printed in the
   cell (e.g. `A`, `A1`, or `A2`); `status` is ON/OFF from the sampled colour.
 - `power_windows.csv` - a **derived** view: per-subgroup (A1, A2, B1, B2, C1,
-  C2, D, E, F) ON/OFF status per slot per day. Derivation rule (not stated
-  explicitly in the PDF): a cell labelled with the plain group letter (e.g.
-  `A`) applies to both of that group's subgroups; a cell labelled with one
-  subgroup (e.g. `A1`) means only that subgroup has the shown status, and the
-  unmentioned sibling is assumed ON for that slot, since the grid only ever
-  shows one label per cell. This held up against the one week checked but
-  is an inference, not an observed fact - treat with proportionate caution
-  before relying on it for e.g. automated alerts.
+  C2, D, E, F) ON/OFF status per slot per day.
 - `locations.csv` - one row per `group, region, location, affected_areas`.
 - `source.pdf` - a copy of the input, for provenance.
 
@@ -52,12 +45,13 @@ This writes to the output directory:
 
 The parsed CSVs are loaded into Postgres (`pipeline/load_to_db.py`) and
 served to the mobile app by a Fastify (Node/TypeScript) API in `api/`, which
-is the only thing the app talks to - it never talks to Supabase directly.
-See `api/README` (package.json scripts) for running it, and
+is the only thing the app talks to. See `api/README` (package.json scripts) for running it, and
 `.github/workflows/weekly-scrape.yml` for how new weeks get scraped, parsed,
 and loaded automatically (daily, since ESCOM's publish day varies).
 
-For local development, `docker-compose.yml` runs a local Postgres (seeded
+## Local Development
+
+`docker-compose.yml` runs a local Postgres (seeded
 from `db/schema.sql`) and the API together - `docker compose up`. In
 production the same API connects to Supabase Postgres instead (via its
 *pooled* connection string - see `api/.env.example`), and the database
