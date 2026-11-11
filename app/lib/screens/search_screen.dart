@@ -7,6 +7,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../controllers/location_controller.dart';
 import '../data/saved_locations_store.dart';
 import '../models/location_entry.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/skeleton.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -63,7 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
       );
       return;
     }
-    final nickname = await showShadDialog<String>(
+    final nickname = await showAppDialog<String>(
       context: context,
       builder: (context) => _NicknameDialog(locationName: entry.location),
     );

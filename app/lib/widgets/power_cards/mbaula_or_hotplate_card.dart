@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../utils/time_format.dart';
 import 'power_card_scaffold.dart';
 
 /// "Mbaula or hot plate" scene: a pot of nsima arcs between an electric hot
@@ -174,6 +175,7 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
                   size: Size(358 * sx, 480 * sy),
                   painter: _KitchenPainter(
                     on: on,
+                    daytime: isDaytime(DateTime.now()),
                     pulse: _ember.value,
                     isDark:
                         MediaQuery.platformBrightnessOf(context) ==
@@ -350,11 +352,13 @@ class _MbaulaOrHotPlateSceneState extends State<MbaulaOrHotPlateScene>
 
 class _KitchenPainter extends CustomPainter {
   final bool on;
+  final bool daytime;
   final double pulse;
   final bool isDark;
 
   const _KitchenPainter({
     required this.on,
+    required this.daytime,
     required this.pulse,
     required this.isDark,
   });
@@ -364,11 +368,13 @@ class _KitchenPainter extends CustomPainter {
     final sx = size.width / 358;
     final sy = size.height / 480;
 
-    // Window - a daytime sky when lights are on, a night sky in blackout.
+    // Window - the sky follows the real time of day, not the power status;
+    // only the frame is lit or unlit with the room.
     final windowRect = Rect.fromLTWH(236 * sx, 96 * sy, 84 * sx, 84 * sy);
     canvas.drawRect(
       windowRect,
-      Paint()..color = on ? const Color(0xFF8FC3E8) : const Color(0xFF0B1530),
+      Paint()
+        ..color = daytime ? const Color(0xFF8FC3E8) : const Color(0xFF0B1530),
     );
     canvas.drawRect(
       windowRect,
@@ -380,7 +386,8 @@ class _KitchenPainter extends CustomPainter {
     canvas.drawCircle(
       Offset(296 * sx, 120 * sy),
       8 * sx,
-      Paint()..color = on ? const Color(0xFFFFF4D6) : const Color(0xFFE9ECF5),
+      Paint()
+        ..color = daytime ? const Color(0xFFFFF4D6) : const Color(0xFFE9ECF5),
     );
 
     // Counter + cabinet.
@@ -538,6 +545,7 @@ class _KitchenPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _KitchenPainter oldDelegate) =>
       oldDelegate.on != on ||
+      oldDelegate.daytime != daytime ||
       oldDelegate.pulse != pulse ||
       oldDelegate.isDark != isDark;
 }
@@ -553,6 +561,7 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
   final bool reduceMotion;
   final VoidCallback onViewSchedule;
   final Widget? headerAction;
+  final Widget? headerPrompt;
 
   const MbaulaOrHotPlateCard({
     super.key,
@@ -565,6 +574,7 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
     required this.reduceMotion,
     required this.onViewSchedule,
     this.headerAction,
+    this.headerPrompt,
   });
 
   @override
@@ -596,12 +606,15 @@ class MbaulaOrHotPlateCard extends StatelessWidget {
       statusTextColor: lightInk,
       subText: isOn
           ? 'Cooking on the hot plate · next outage $restoreTime'
-          : 'Nsima on the mbaula tonight · back at $restoreTime',
+          : 'Nsima on the mbaula '
+                '${isDaytime(DateTime.now()) ? 'today' : 'tonight'} · '
+                'back at $restoreTime',
       subTextColor: isOn ? const Color(0xFFE8DFD3) : lightInkSoft,
       currentTime: currentTime,
       scene: MbaulaOrHotPlateScene(isOn: isOn, reduceMotion: reduceMotion),
       onViewSchedule: onViewSchedule,
       headerAction: headerAction,
+      headerPrompt: headerPrompt,
     );
   }
 }

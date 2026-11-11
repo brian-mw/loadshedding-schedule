@@ -469,6 +469,7 @@ class HangingBulbCard extends StatelessWidget {
   final bool reduceMotion;
   final VoidCallback onViewSchedule;
   final Widget? headerAction;
+  final Widget? headerPrompt;
 
   const HangingBulbCard({
     super.key,
@@ -481,6 +482,7 @@ class HangingBulbCard extends StatelessWidget {
     required this.reduceMotion,
     required this.onViewSchedule,
     this.headerAction,
+    this.headerPrompt,
   });
 
   @override
@@ -517,6 +519,7 @@ class HangingBulbCard extends StatelessWidget {
       scene: HangingBulbScene(isOn: isOn, reduceMotion: reduceMotion),
       onViewSchedule: onViewSchedule,
       headerAction: headerAction,
+      headerPrompt: headerPrompt,
     );
   }
 }

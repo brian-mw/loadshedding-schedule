@@ -7,6 +7,7 @@ import '../controllers/schedule_controller.dart';
 import '../data/saved_locations_store.dart';
 import '../widgets/power_cards/power_card.dart';
 import '../utils/time_format.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/skeleton.dart';
 import 'location_detail_screen.dart';
 import 'search_screen.dart';
@@ -96,21 +97,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   reduceMotion: reduceMotion,
                   onViewSchedule: () =>
                       Get.to(() => LocationDetailScreen(location: loc)),
-                  headerAction: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _ChromeButton(
-                        icon: LucideIcons.flag,
-                        label: 'Report power status',
-                        onTap: () => _reportStatus(context, loc),
-                      ),
-                      const SizedBox(width: 8),
-                      _ChromeButton(
-                        icon: LucideIcons.settings,
-                        label: 'Settings',
-                        onTap: () => Get.to(() => const SettingsScreen()),
-                      ),
-                    ],
+                  headerAction: _ChromeButton(
+                    icon: LucideIcons.settings,
+                    label: 'Settings',
+                    onTap: () => Get.to(() => const SettingsScreen()),
+                  ),
+                  headerPrompt: _ReportPill(
+                    // Asks about the opposite of what's shown, since that's
+                    // the correction a user would want to make.
+                    label: isOn ? 'Lights off?' : 'Lights back on?',
+                    onTap: () => _reportStatus(context, loc, isOn),
                   ),
                 );
               },
@@ -138,23 +134,33 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _reportStatus(BuildContext context, SavedLocation loc) async {
-    final isOn = await showShadDialog<bool>(
+  /// [shownOn] is the status currently on screen; the dialog is worded
+  /// around confirming or correcting it.
+  Future<void> _reportStatus(
+    BuildContext context,
+    SavedLocation loc,
+    bool shownOn,
+  ) async {
+    final isOn = await showAppDialog<bool>(
       context: context,
       builder: (context) => ShadDialog.alert(
-        title: Text('Is the power on at ${loc.displayName}?'),
+        title: Text(
+          shownOn
+              ? 'Has the power gone off at ${loc.displayName}?'
+              : 'Is the power back on at ${loc.displayName}?',
+        ),
         description: const Text(
           'Seeing something different from what\'s shown? Your report '
           'corrects it here and helps others in the same area.',
         ),
         actions: [
           ShadButton.outline(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('It\'s off'),
+            onPressed: () => Navigator.of(context).pop(shownOn),
+            child: Text(shownOn ? 'Still on' : 'Still off'),
           ),
           ShadButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('It\'s on'),
+            onPressed: () => Navigator.of(context).pop(!shownOn),
+            child: Text(shownOn ? 'Blackout' : 'Back on'),
           ),
         ],
       ),
@@ -204,6 +210,49 @@ class _ChromeButton extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Icon(icon, color: Colors.white, size: 22),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Text prompt inviting the user to correct the shown power status. Same
+/// translucent backing and height as [_ChromeButton].
+class _ReportPill extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _ReportPill({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      hint: 'Report power status',
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.35),
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            height: 46,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Center(
+                widthFactor: 1,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),

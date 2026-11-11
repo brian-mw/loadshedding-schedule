@@ -86,12 +86,23 @@ class EscomApp extends StatelessWidget {
         padding: EdgeInsets.zero,
       ),
     );
+    // Dialogs float with a margin (see showAppDialog), so they keep their
+    // rounded corners on phones instead of shadcn_ui's square default. The
+    // gaps are opened up from the default 8, which packs the title, text
+    // and stacked buttons too tightly at phone width.
+    const dialogTheme = ShadDialogTheme(
+      removeBorderRadiusWhenTiny: false,
+      gap: 16,
+      actionsGap: 12,
+    );
     return ShadApp.custom(
       themeMode: ThemeMode.system,
       theme: ShadThemeData(
         brightness: Brightness.light,
         colorScheme: const ShadBlueColorScheme.light(),
         buttonSizesTheme: buttonSizes,
+        primaryDialogTheme: dialogTheme,
+        alertDialogTheme: dialogTheme,
       ),
       darkTheme: ShadThemeData(
         brightness: Brightness.dark,
@@ -117,6 +128,8 @@ class EscomApp extends StatelessWidget {
           input: Color(0xFF2E2E2E),
         ),
         buttonSizesTheme: buttonSizes,
+        primaryDialogTheme: dialogTheme,
+        alertDialogTheme: dialogTheme,
       ),
       appBuilder: (context) {
         return GetMaterialApp(

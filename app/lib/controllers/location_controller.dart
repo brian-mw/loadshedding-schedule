@@ -20,11 +20,10 @@ class LocationController extends GetxController {
   static const _onPhrases = [
     'Lights are on',
     'Power is on',
-    'Supply is on',
     "We've got power",
     'Electricity is on',
-    'Magetsi alipo', // Chichewa: "there is power"
-    'Kuwala kulipo', // Chichewa: "there is light"
+    'Magetsi akuyaka',
+    'Akuyaka',
   ];
   static const _offPhrases = [
     'Blackout',
@@ -32,8 +31,8 @@ class LocationController extends GetxController {
     'Lights are off',
     'Load shedding',
     'No power right now',
-    'Magetsi alibe', // Chichewa: "there is no power"
-    'Palibe magetsi', // Chichewa: "no power"
+    'Magetsi Kulibe',
+    'Azima Konse',
   ];
 
   final RxList<SavedLocation> savedLocations = <SavedLocation>[].obs;

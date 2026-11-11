@@ -102,6 +102,7 @@ class PowerCardScaffold extends StatelessWidget {
   final Widget scene;
   final VoidCallback onViewSchedule;
   final Widget? headerAction;
+  final Widget? headerPrompt;
 
   const PowerCardScaffold({
     super.key,
@@ -122,6 +123,7 @@ class PowerCardScaffold extends StatelessWidget {
     required this.scene,
     required this.onViewSchedule,
     this.headerAction,
+    this.headerPrompt,
   });
 
   @override
@@ -210,15 +212,33 @@ class PowerCardScaffold extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          if (headerAction != null) ...[
-                            headerAction!,
-                            const SizedBox(width: 8),
-                          ],
-                          _StatusChip(
-                            backgroundColor: chipBackgroundColor,
-                            textColor: chipTextColor,
-                            dotColor: chipDotColor,
-                            text: isOn ? 'Lights on' : 'Blackout',
+                          // Chip and action share a row; the prompt goes
+                          // underneath, leaving the area name room on
+                          // narrow screens.
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _StatusChip(
+                                    backgroundColor: chipBackgroundColor,
+                                    textColor: chipTextColor,
+                                    dotColor: chipDotColor,
+                                    text: isOn ? 'Lights on' : 'Blackout',
+                                  ),
+                                  if (headerAction != null) ...[
+                                    const SizedBox(width: 8),
+                                    headerAction!,
+                                  ],
+                                ],
+                              ),
+                              if (headerPrompt != null) ...[
+                                const SizedBox(height: 8),
+                                headerPrompt!,
+                              ],
+                            ],
                           ),
                         ],
                       ),

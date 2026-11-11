@@ -19,6 +19,7 @@ class PowerCard extends StatelessWidget {
   final bool reduceMotion;
   final VoidCallback onViewSchedule;
   final Widget? headerAction;
+  final Widget? headerPrompt;
 
   const PowerCard({
     super.key,
@@ -32,6 +33,7 @@ class PowerCard extends StatelessWidget {
     required this.reduceMotion,
     required this.onViewSchedule,
     this.headerAction,
+    this.headerPrompt,
   });
 
   @override
@@ -48,6 +50,7 @@ class PowerCard extends StatelessWidget {
           reduceMotion: reduceMotion,
           onViewSchedule: onViewSchedule,
           headerAction: headerAction,
+          headerPrompt: headerPrompt,
         );
       case PowerCardStyle.candleOrBulb:
         return CandleOrBulbCard(
@@ -60,6 +63,7 @@ class PowerCard extends StatelessWidget {
           reduceMotion: reduceMotion,
           onViewSchedule: onViewSchedule,
           headerAction: headerAction,
+          headerPrompt: headerPrompt,
         );
       case PowerCardStyle.mbaulaOrHotPlate:
         return MbaulaOrHotPlateCard(
@@ -72,6 +76,7 @@ class PowerCard extends StatelessWidget {
           reduceMotion: reduceMotion,
           onViewSchedule: onViewSchedule,
           headerAction: headerAction,
+          headerPrompt: headerPrompt,
         );
       case PowerCardStyle.deskFan:
         return DeskFanCard(
@@ -84,6 +89,7 @@ class PowerCard extends StatelessWidget {
           reduceMotion: reduceMotion,
           onViewSchedule: onViewSchedule,
           headerAction: headerAction,
+          headerPrompt: headerPrompt,
         );
     }
   }

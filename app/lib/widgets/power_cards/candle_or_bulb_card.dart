@@ -351,6 +351,7 @@ class CandleOrBulbCard extends StatelessWidget {
   final bool reduceMotion;
   final VoidCallback onViewSchedule;
   final Widget? headerAction;
+  final Widget? headerPrompt;
 
   const CandleOrBulbCard({
     super.key,
@@ -363,6 +364,7 @@ class CandleOrBulbCard extends StatelessWidget {
     required this.reduceMotion,
     required this.onViewSchedule,
     this.headerAction,
+    this.headerPrompt,
   });
 
   @override
@@ -397,6 +399,7 @@ class CandleOrBulbCard extends StatelessWidget {
       scene: CandleOrBulbScene(isOn: isOn, reduceMotion: reduceMotion),
       onViewSchedule: onViewSchedule,
       headerAction: headerAction,
+      headerPrompt: headerPrompt,
     );
   }
 }

@@ -7,6 +7,7 @@ import '../controllers/location_controller.dart';
 import '../controllers/schedule_controller.dart';
 import '../data/notification_prefs_store.dart';
 import '../data/saved_locations_store.dart';
+import '../widgets/app_dialog.dart';
 import 'search_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -17,7 +18,7 @@ class SettingsScreen extends StatelessWidget {
     LocationController controller,
     SavedLocation loc,
   ) async {
-    final confirmed = await showShadDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
       builder: (context) => ShadDialog.alert(
         title: Text('Remove ${loc.displayName}?'),
