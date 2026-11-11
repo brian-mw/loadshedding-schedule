@@ -4,9 +4,10 @@ The schedule grid is located by searching for duration labels (`"3.5hrs"`
 etc.) and single/double-letter group tokens (`A`, `A1`, ...) within the known
 y-range, then clustering by position - no coordinates are hardcoded other
 than the general search windows (`y` between 140 and 245 for the grid).
-Each cell's colour is sampled from a rendered 12x page image, offset away
-from both the cell borders and the text glyph (`cx+6, ry+1.1` relative to the
-column-centre/row-top anchors) to avoid misreads from antialiasing.
+Each cell's colour is read from the PDF's vector fill shapes at a point offset
+from the cell borders and text glyph (`cx+6, ry+1.1` relative to the
+column-centre/row-top anchors). This avoids rendering the page to an image and
+sampling raster pixels.
 
 The location table is parsed per 3-column layout (`x` starting at 51.72,
 180.38, 309.17pt - standard for this template) using the table's own
@@ -35,6 +36,12 @@ sum to 24 hours, which is what `extract_schedule` uses now. If ESCOM changes
 the template further, re-run the diagnostic scripts this was built with
 (column x-dump, `get_drawings()` fill-colour histogram, rendered crops for
 visual spot-check) against the new PDF before trusting the output.
+
+## Regression check
+
+Run `pipeline/venv/bin/python -m unittest discover -s pipeline/tests` from the
+repository root. The test parses each checked-in source PDF and compares all
+generated records against its saved CSV and metadata outputs.
 
 ## Derivation rule
 

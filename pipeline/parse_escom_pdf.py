@@ -34,7 +34,6 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import pymupdf as fitz
-from PIL import Image
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 logger = logging.getLogger(__name__)
@@ -186,23 +185,22 @@ def cluster_1d(values: Iterable[float], tol: float = 1.5) -> list[float]:
 Word = tuple[float, float, float, float, str, int, int, int]
 
 
-class PageColorSampler:
-    """Samples a page's fill colour at arbitrary PDF coordinates, by rendering
-    it to a high-zoom raster image once up front."""
-
-    ZOOM = 12.0
+class PageFillSampler:
+    """Looks up the vector fill color covering each schedule-cell sample point."""
 
     def __init__(self, page: fitz.Page) -> None:
-        pix = page.get_pixmap(matrix=fitz.Matrix(self.ZOOM, self.ZOOM))
-        self._image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+        self._fills = [
+            (drawing["rect"], closest_color_name(tuple(round(channel * 255) for channel in drawing["fill"])))
+            for drawing in page.get_drawings()
+            if drawing["fill"] is not None
+        ]
 
-    def sample(self, px: float, py: float, w: float = 2.0, h: float = 1.0) -> tuple[int, int, int]:
-        zoom = self.ZOOM
-        x0, y0 = max(0, int(px * zoom)), max(0, int(py * zoom))
-        x1 = min(self._image.width, max(int((px + w) * zoom), x0 + 1))
-        y1 = min(self._image.height, max(int((py + h) * zoom), y0 + 1))
-        pixels = sorted(self._image.crop((x0, y0, x1, y1)).get_flattened_data())
-        return pixels[len(pixels) // 2]
+    def sample(self, px: float, py: float) -> ColorName:
+        # Drawings are in paint order, so the last covering fill is visible.
+        for rect, color_name in reversed(self._fills):
+            if rect.x0 <= px <= rect.x1 and rect.y0 <= py <= rect.y1:
+                return color_name
+        raise ValueError(f"no vector fill found at schedule cell sample point ({px:.2f}, {py:.2f})")
 
 
 def _duration_tokens_by_band(words: list[Word]) -> dict[int, list[Word]]:
@@ -250,7 +248,7 @@ def _day_header_chunks(words: list[Word]) -> dict[int, list[tuple[float, str]]]:
 def extract_schedule(doc: fitz.Document) -> list[ScheduleCell]:
     page = doc[0]
     words = page.get_text("words")
-    sampler = PageColorSampler(page)
+    sampler = PageFillSampler(page)
 
     duration_bands = _duration_tokens_by_band(words)
     hour_tokens = _hour_boundary_tokens(words)
@@ -343,14 +341,14 @@ def _extract_row(
     col_slot_idx: list[int],
     day_dates: list[str | None],
     table_type: TableType,
-    sampler: PageColorSampler,
+    sampler: PageFillSampler,
 ) -> list[ScheduleCell]:
     row_toks = sorted((w for w in row_letters if abs(w[1] - ry) < 1.5), key=lambda w: w[0])
     base_letter = row_toks[0][4][0] if row_toks else "?"
 
     cells = []
     for ci, (cx, dur_text) in enumerate(cols):
-        color_name = closest_color_name(sampler.sample(cx + 6.0, ry + 1.1))
+        color_name = sampler.sample(cx + 6.0, ry + 1.1)
         day_idx = col_day_idx[ci]
         # slot_times is indexed by the column's own flat position in the band, not
         # by its within-day slot number - the two only coincide when every day has
@@ -378,7 +376,7 @@ def _extract_band(
     hour_tokens: list[tuple[float, float, str]],
     letter_tokens: list[Word],
     day_header_chunks: dict[int, list[tuple[float, str]]],
-    sampler: PageColorSampler,
+    sampler: PageFillSampler,
 ) -> list[ScheduleCell]:
     cols = _band_columns(duration_tokens)
     slot_times = _band_slot_times(band_y, hour_tokens)
