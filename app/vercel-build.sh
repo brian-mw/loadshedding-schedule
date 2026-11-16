@@ -30,6 +30,11 @@ else
   fi
 fi
 
+if [[ -e "$SDK_DIR/.git" ]] &&
+  ! git config --global --get-all safe.directory | grep -Fxq "$SDK_DIR"; then
+  git config --global --add safe.directory "$SDK_DIR"
+fi
+
 cd "$APP_DIR"
 "$FLUTTER_BIN" pub get
 "$FLUTTER_BIN" build web \
