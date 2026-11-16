@@ -131,11 +131,15 @@ DATE_HEADER_FORMATS = ("%A, %B %d, %Y", "%A, %d %B %Y", "%A, %B %d %Y", "%A %d %
 
 def parse_header_date_to_iso(text: str | None) -> str | None:
     """Normalize a day-header text (e.g. 'Monday, November 2, 2026') to 'YYYY-MM-DD'.
-    Returns None if it doesn't match any known ESCOM phrasing."""
+    Any text following the year is ignored; some PDFs append a forecast notice to
+    the final day header. Returns None if it doesn't match any known ESCOM phrasing."""
     if not text:
         return None
     cleaned = re.sub(r"(\d+)(st|nd|rd|th)\b", r"\1", text.strip(), flags=re.IGNORECASE)
     cleaned = re.sub(r"\s+", " ", cleaned)
+    year_match = re.search(r"\b\d{4}\b", cleaned)
+    if year_match:
+        cleaned = cleaned[:year_match.end()]
     for fmt in DATE_HEADER_FORMATS:
         try:
             return datetime.strptime(cleaned, fmt).strftime("%Y-%m-%d")

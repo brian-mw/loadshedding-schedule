@@ -13,6 +13,14 @@ DATA_DIR = ROOT / "data"
 
 
 class ParserRegressionTests(unittest.TestCase):
+    def test_parse_header_date_ignores_trailing_forecast_notice(self) -> None:
+        self.assertEqual(
+            parse_escom_pdf.parse_header_date_to_iso(
+                "Saturday, 21 November 2026 forecasts, random fluctuations in intensity of sunshine may affect solar power"
+            ),
+            "2026-11-21",
+        )
+
     def test_outputs_match_all_checked_in_pdfs(self) -> None:
         week_dirs = sorted(path.parent for path in DATA_DIR.glob("*/source.pdf"))
         self.assertTrue(week_dirs, "no checked-in source PDFs found")
