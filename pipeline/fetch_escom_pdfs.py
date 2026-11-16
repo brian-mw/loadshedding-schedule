@@ -1,29 +1,21 @@
 #!/usr/bin/env python3
 """
-Scrape loadshedding-programme PDFs from https://www.escom.mw/loadshedding-program/
-and (by default) run each new one through parse_escom_pdf.py.
+Fetch ESCOM loadshedding PDFs and, by default, parse new downloads.
 
 Usage:
-    python fetch_escom_pdfs.py [--all] [--limit N] [--dry-run] [--no-parse]
-                                [--data-dir ../data]
+    python fetch_escom_pdfs.py [options]
 
-    --all        Check every listing on the page (default: just the newest one).
-    --limit N    Cap how many listings to consider, newest first (default: 1,
-                 or unlimited with --all unless --limit is also given).
-    --dry-run    Show what would be downloaded/parsed without doing it.
-    --no-parse   Only download source.pdf; skip running parse_escom_pdf.py.
-    --data-dir   Where week folders live (default: ../data relative to this file).
-    --since D    Only fetch weeks starting on/after ISO date D, e.g. 2026-06-01.
+    --all       Check all listings (default: newest only).
+    --limit N   Limit listings checked.
+    --since D   Only fetch weeks starting on/after ISO date D.
+    --dry-run   Show actions without downloading or parsing.
+    --no-parse  Download PDFs without parsing them.
+    --data-dir  Set the output directory (default: ../data).
 
-A listing is considered "already fetched" if data/<week-label>/source.pdf
-already exists, so re-running this is safe/idempotent - it only fetches and
-parses what's missing.
+Existing week PDFs are skipped, so the script can be rerun safely.
 
-Note on TLS: www.escom.mw's server doesn't send its intermediate certificate
-(a server misconfiguration, not a security concern with the content), so the
-default system CA bundle alone fails to verify the chain. We fix this properly
-by supplying the missing Sectigo intermediate alongside the system bundle,
-rather than disabling verification. See certs/README.md.
+TLS verification uses the system CA bundle plus ESCOM's missing Sectigo
+intermediate certificate; verification is not disabled. See certs/README.md.
 """
 import argparse
 import json

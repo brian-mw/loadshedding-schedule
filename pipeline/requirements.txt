@@ -1,5 +1,4 @@
 pymupdf
-pillow
 pydantic
 requests
 beautifulsoup4

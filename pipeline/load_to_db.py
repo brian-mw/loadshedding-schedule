@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Load one week's parsed ESCOM output (from parse_escom_pdf.py) into Postgres.
+Load parsed ESCOM data into Postgres.
 
 Usage:
     python load_to_db.py <data/week-label-dir>
-    python load_to_db.py --latest   # auto-picks the newest dir under data/ by week_start
+    python load_to_db.py --latest
 
-Reads DATABASE_URL from the environment (.env via python-dotenv). Upserts into
-programmes, power_windows, and locations (see db/schema.sql for the schema -
-run that once against a fresh database before the first load).
+The latest mode selects the newest parsed week under data/. DATABASE_URL is
+read from the environment or .env. Programme and power-window records are
+upserted; locations are replaced with the selected week's data.
 """
 import argparse
 import csv
