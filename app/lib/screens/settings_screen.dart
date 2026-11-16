@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -23,7 +24,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (context) => ShadDialog.alert(
         title: Text('Remove ${loc.displayName}?'),
         description: const Text(
-          'You\'ll stop getting its schedule and status notifications.',
+          'You\'ll stop following its schedule and status.',
         ),
         actions: [
           ShadButton.outline(
@@ -145,6 +146,9 @@ class SettingsScreen extends StatelessWidget {
       body: Obx(() {
         final saved = controller.savedLocations;
         final atLimit = saved.length >= SavedLocationsStore.maxSaved;
+        final primaryDescription = kIsWeb
+            ? 'The primary location appears first.'
+            : 'The primary location sets the app icon: a lit bulb while its power is on.';
         return ListView(
           // The page draws behind the navigation bar, so the last item
           // needs that much extra room to scroll clear of it.
@@ -175,11 +179,9 @@ class SettingsScreen extends StatelessWidget {
             Text(
               atLimit
                   ? 'You can save up to ${SavedLocationsStore.maxSaved} '
-                        'locations - remove one to add another. The primary '
-                        'one sets the app icon: a lit bulb while its power '
-                        'is on.'
-                  : 'The primary location sets the app icon: a lit bulb '
-                        'while its power is on.',
+                        'locations - remove one to add another. '
+                        '$primaryDescription'
+                  : primaryDescription,
               style: theme.textTheme.muted,
             ),
             const SizedBox(height: 12),
@@ -194,97 +196,110 @@ class SettingsScreen extends StatelessWidget {
                   isPrimary: entry.$1 == 0,
                 ),
               ),
-            const SizedBox(height: 28),
-            _SectionHeader(
-              icon: LucideIcons.bellRing,
-              title: 'Transition alerts',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'How much notice to give before a saved location\'s power is '
-              'about to go on or off.',
-              style: theme.textTheme.muted,
-            ),
-            const SizedBox(height: 12),
-            Obx(
-              () => ShadCard(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    const Expanded(child: Text('Alert me')),
-                    ShadSelect<int>(
-                      // Forces a fresh state whenever the backing value
-                      // changes from outside this widget (e.g. once the
-                      // persisted setting finishes loading asynchronously),
-                      // since ShadSelect only reads initialValue once.
-                      key: ValueKey(
-                        scheduleController.transitionLeadMinutes.value,
-                      ),
-                      initialValue:
-                          scheduleController.transitionLeadMinutes.value,
-                      options: _leadOptions.entries
-                          .map(
-                            (e) =>
-                                ShadOption(value: e.key, child: Text(e.value)),
-                          )
-                          .toList(),
-                      selectedOptionBuilder: (context, value) =>
-                          Text(_leadOptions[value] ?? 'Off'),
-                      onChanged: (value) {
-                        if (value != null) {
-                          scheduleController.setTransitionLeadMinutes(value);
-                        }
-                      },
-                    ),
-                  ],
+            if (kIsWeb) ...[
+              const ShadAlert(
+                icon: Icon(LucideIcons.info, size: 16),
+                title: Text('Notifications unavailable in browser'),
+                description: Text(
+                  'Scheduled and persistent status notifications are '
+                  'available in the mobile app.',
                 ),
               ),
-            ),
-            const SizedBox(height: 28),
-            _SectionHeader(
-              icon: LucideIcons.bell,
-              title: 'Status notification',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Always show current power status in the notification shade.',
-              style: theme.textTheme.muted,
-            ),
-            const SizedBox(height: 12),
-            Obx(
-              () => ShadCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShadSwitch(
-                      value:
-                          scheduleController.statusNotificationsEnabled.value,
-                      onChanged:
-                          scheduleController.setStatusNotificationsEnabled,
-                      label: const Text('Show status notification'),
-                    ),
-                    if (scheduleController
-                        .statusNotificationsEnabled
-                        .value) ...[
-                      const SizedBox(height: 16),
-                      ShadSwitch(
-                        value: scheduleController
-                            .statusNotificationsPersistent
-                            .value,
-                        onChanged:
-                            scheduleController.setStatusNotificationsPersistent,
-                        label: const Text('Make it persistent'),
-                        sublabel: const Text(
-                          'Can\'t be swiped away - always on until you turn '
-                          'this off',
+            ] else ...[
+              const SizedBox(height: 28),
+              _SectionHeader(
+                icon: LucideIcons.bellRing,
+                title: 'Transition alerts',
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'How much notice to give before a saved location\'s power is '
+                'about to go on or off.',
+                style: theme.textTheme.muted,
+              ),
+              const SizedBox(height: 12),
+              Obx(
+                () => ShadCard(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      const Expanded(child: Text('Alert me')),
+                      ShadSelect<int>(
+                        // Forces a fresh state whenever the backing value
+                        // changes from outside this widget (e.g. once the
+                        // persisted setting finishes loading asynchronously),
+                        // since ShadSelect only reads initialValue once.
+                        key: ValueKey(
+                          scheduleController.transitionLeadMinutes.value,
                         ),
+                        initialValue:
+                            scheduleController.transitionLeadMinutes.value,
+                        options: _leadOptions.entries
+                            .map(
+                              (e) => ShadOption(
+                                value: e.key,
+                                child: Text(e.value),
+                              ),
+                            )
+                            .toList(),
+                        selectedOptionBuilder: (context, value) =>
+                            Text(_leadOptions[value] ?? 'Off'),
+                        onChanged: (value) {
+                          if (value != null) {
+                            scheduleController.setTransitionLeadMinutes(value);
+                          }
+                        },
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 28),
+              _SectionHeader(
+                icon: LucideIcons.bell,
+                title: 'Status notification',
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Always show current power status in the notification shade.',
+                style: theme.textTheme.muted,
+              ),
+              const SizedBox(height: 12),
+              Obx(
+                () => ShadCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShadSwitch(
+                        value:
+                            scheduleController.statusNotificationsEnabled.value,
+                        onChanged:
+                            scheduleController.setStatusNotificationsEnabled,
+                        label: const Text('Show status notification'),
+                      ),
+                      if (scheduleController
+                          .statusNotificationsEnabled
+                          .value) ...[
+                        const SizedBox(height: 16),
+                        ShadSwitch(
+                          value: scheduleController
+                              .statusNotificationsPersistent
+                              .value,
+                          onChanged: scheduleController
+                              .setStatusNotificationsPersistent,
+                          label: const Text('Make it persistent'),
+                          sublabel: const Text(
+                            'Can\'t be swiped away - always on until you turn '
+                            'this off',
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 28),
             ShadAlert(
               icon: const Icon(LucideIcons.info, size: 16),

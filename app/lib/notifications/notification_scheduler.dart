@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -14,6 +15,7 @@ class NotificationScheduler {
   bool _initialized = false;
 
   Future<void> init() async {
+    if (kIsWeb) return;
     if (_initialized) return;
     tz_data.initializeTimeZones();
     // Status-bar icon must be a plain white silhouette, not the full-colour
@@ -50,6 +52,7 @@ class NotificationScheduler {
     required List<PowerWindow> powerWindows,
     required Duration leadTime,
   }) async {
+    if (kIsWeb) return;
     await init();
     // Cancel this location's slice of the id space (10 slots reserved/location).
     for (var i = 0; i < 10; i++) {
@@ -117,6 +120,7 @@ class NotificationScheduler {
     required bool persistent,
     required bool isOn,
   }) async {
+    if (kIsWeb) return;
     await init();
     await _plugin.show(
       id: id,
@@ -154,6 +158,7 @@ class NotificationScheduler {
     required String title,
     required String body,
   }) async {
+    if (kIsWeb) return;
     await init();
     await _plugin.show(
       id: id,

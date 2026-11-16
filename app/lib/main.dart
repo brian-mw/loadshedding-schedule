@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,7 +13,9 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Draw behind the system bars, so the full-screen power scenes run edge
   // to edge instead of stopping at an opaque navigation bar.
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  if (!kIsWeb) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
   Get.put(LocationController());
   Get.put(ScheduleController());
   runApp(const EscomApp());
