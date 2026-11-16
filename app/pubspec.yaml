@@ -61,6 +61,11 @@ dev_dependencies:
 # ic_launcher_off* Android resources - is maintained by hand alongside it.
 flutter_launcher_icons:
   android: true
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#121212"
+    theme_color: "#121212"
   # A plain transparent icon, deliberately not an adaptive one: an adaptive
   # icon always gets a background plate from the launcher, and the icon is
   # meant to be just the bulb.
