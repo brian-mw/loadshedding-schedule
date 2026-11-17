@@ -5,9 +5,9 @@
   "type": "commonjs",
   "scripts": {
     "postinstall": "prisma generate",
-    "dev": "tsx watch src/server.ts",
+    "dev": "node --env-file-if-exists=.env --import tsx --watch src/server.ts",
     "build": "prisma generate && tsc",
-    "start": "node dist/src/server.js",
+    "start": "node --env-file-if-exists=.env dist/src/server.js",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy"
   },

@@ -16,10 +16,8 @@
     },
     "api": {
       "root": "api",
-      "framework": "fastify",
-      "entrypoint": "src/server.ts",
-      "installCommand": "npm ci",
-      "buildCommand": "npm run build"
+      "entrypoint": "Dockerfile",
+      "runtime": "container"
     }
   },
   "rewrites": [
