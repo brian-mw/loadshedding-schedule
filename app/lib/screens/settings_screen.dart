@@ -144,6 +144,56 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: Obx(() {
+        if (kIsWeb) {
+          final selected = controller.webSelectedLocation.value;
+          return ListView(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              16 + MediaQuery.paddingOf(context).bottom,
+            ),
+            children: [
+              _SectionHeader(icon: LucideIcons.mapPin, title: 'Location'),
+              const SizedBox(height: 4),
+              Text(
+                selected == null
+                    ? 'Search for an area to view its schedule. Your selection '
+                          'is not saved and will be cleared when you refresh '
+                          'this page.'
+                    : 'Currently viewing ${selected.displayName}. Your '
+                          'selection is not saved and will be cleared when '
+                          'you refresh this page.',
+                style: theme.textTheme.muted,
+              ),
+              const SizedBox(height: 12),
+              ShadButton.outline(
+                onPressed: () => Get.to(() => const SearchScreen()),
+                leading: const Icon(LucideIcons.search, size: 16),
+                child: const Text('Search locations'),
+              ),
+              const SizedBox(height: 28),
+              const ShadAlert(
+                icon: Icon(LucideIcons.info, size: 16),
+                title: Text('Notifications unavailable in browser'),
+                description: Text(
+                  'Scheduled and persistent status notifications are '
+                  'available in the mobile app.',
+                ),
+              ),
+              const SizedBox(height: 28),
+              const ShadAlert(
+                icon: Icon(LucideIcons.info, size: 16),
+                title: Text('Not a live reading'),
+                description: Text(
+                  'Schedule from ESCOM\'s published programme - actual power '
+                  'may differ from what\'s shown.',
+                ),
+              ),
+            ],
+          );
+        }
+
         final saved = controller.savedLocations;
         final atLimit = saved.length >= SavedLocationsStore.maxSaved;
         final primaryDescription = kIsWeb

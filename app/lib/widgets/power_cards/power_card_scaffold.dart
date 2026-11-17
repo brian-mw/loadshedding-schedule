@@ -1,24 +1,22 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// The design reference (HANDOFF.md) specifies a 358x480 card. Each scene
 /// widget lays its elements out as fractions of this canvas (x/358, y/480,
 /// w/358, h/480) via [DesignCanvas], so the same relative composition holds
-/// at any real screen size without cropping - the full-screen treatment
-/// stretches independently on each axis rather than uniformly scaling and
-/// cropping, which would otherwise clip content off the sides of a narrow
-/// phone screen that's much taller than the 358:480 reference proportion.
+/// at any real screen size without cropping. The canvas fits inside both
+/// available dimensions, which keeps the scene intact on wide web viewports.
 const double kDesignWidth = 358;
 const double kDesignHeight = 480;
 
 /// Lays out fractional-coordinate children (expressed as x/[kDesignWidth],
 /// y/[kDesignHeight], etc.) to fill the available width, using a single
 /// uniform scale for both axes so circular/oval shapes (the bulb, candle,
-/// pot...) keep their proportions. A phone screen is much taller relative to
-/// its width than the 358:480 reference card, so the scaled canvas is
-/// shorter than the full height available; it's vertically centered rather
-/// than stretched to fill it, leaving flat background above and below
-/// (behind the header/footer chrome) instead of distorting the scene.
+/// pot...) keep their proportions. When the viewport is taller relative to
+/// its width than the reference card, the canvas is vertically centered
+/// rather than stretched to fill it.
 class DesignCanvas extends StatelessWidget {
   final Widget Function(BuildContext context, double sx, double sy) builder;
 
@@ -28,7 +26,10 @@ class DesignCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final scale = constraints.maxWidth / kDesignWidth;
+        final scale = math.min(
+          constraints.maxWidth / kDesignWidth,
+          constraints.maxHeight / kDesignHeight,
+        );
         return Center(
           child: SizedBox(
             width: kDesignWidth * scale,

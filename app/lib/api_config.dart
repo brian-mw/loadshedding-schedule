@@ -5,6 +5,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 const String kApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: kIsWeb
-      ? 'https://loadshedding-ten.vercel.app'
+      ? '/api'
       : 'http://10.0.2.2:3000', // Android emulator -> host localhost
 );

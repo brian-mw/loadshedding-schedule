@@ -47,24 +47,3 @@ production the same API connects to Supabase Postgres instead (via its
 *pooled* connection string - see `api/.env.example`), and the database
 schema itself is managed with Prisma (`api/prisma/schema.prisma`,
 `npm run migrate:dev` / `migrate:deploy`).
-
-## Web app: Vercel
-
-The Flutter app can be deployed as a static web app from this repository.
-Create a Vercel project connected to the repository and keep the project root
-set to `app/`. The web app uses
-`https://loadshedding-ten.vercel.app` as its default API. To override it, set
-`API_BASE_URL` for Production and Preview builds to the deployed API's HTTPS
-base URL; this value is compiled into the browser app and is not a secret. The
-API must allow browser requests from the Vercel deployment origin.
-
-`app/vercel.json` builds the Flutter web app with Flutter 3.41.5 and publishes
-`build/web`; Vercel's Git integration then deploys pushes automatically.
-Scheduled and persistent status notifications are unavailable in browsers,
-so those settings remain mobile-only.
-
-For a local web build using the default API, run from `app/`:
-
-```
-flutter build web --release
-```

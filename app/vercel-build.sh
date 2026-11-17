@@ -5,11 +5,12 @@ readonly FLUTTER_VERSION="3.41.5"
 readonly APP_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly SDK_DIR="${HOME}/.cache/flutter-${FLUTTER_VERSION}"
 
-API_BASE_URL="${API_BASE_URL:-https://loadshedding-ten.vercel.app}"
+API_BASE_URL="${API_BASE_URL:-/api}"
 case "$API_BASE_URL" in
   https://*) ;;
+  /*) ;;
   *)
-    echo "API_BASE_URL must use HTTPS for a Vercel deployment." >&2
+    echo "API_BASE_URL must be an absolute path or an HTTPS URL." >&2
     exit 1
     ;;
 esac

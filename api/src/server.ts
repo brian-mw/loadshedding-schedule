@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import type { IncomingMessage, ServerResponse } from 'http';
-import Fastify from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import locationsRoutes from './routes/locations';
 import powerWindowsRoutes from './routes/powerWindows';
@@ -12,12 +12,16 @@ function buildApp() {
 
   app.register(cors, { origin: true });
 
-  app.get('/health', async () => ({ ok: true }));
+  function registerRoutes(server: FastifyInstance) {
+    server.get('/health', async () => ({ ok: true }));
+    server.register(locationsRoutes);
+    server.register(powerWindowsRoutes);
+    server.register(programmesRoutes);
+    server.register(statusReportsRoutes);
+  }
 
-  app.register(locationsRoutes);
-  app.register(powerWindowsRoutes);
-  app.register(programmesRoutes);
-  app.register(statusReportsRoutes);
+  app.register(registerRoutes);
+  app.register(registerRoutes, { prefix: '/api' });
 
   return app;
 }

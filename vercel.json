@@ -1,0 +1,39 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": "app",
+      "installCommand": "true",
+      "buildCommand": "bash vercel-build.sh",
+      "devCommand": "flutter run -d web-server --web-hostname 0.0.0.0 --web-port $PORT",
+      "outputDirectory": "build/web",
+      "rewrites": [
+        {
+          "source": "/(.*)",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    "api": {
+      "root": "api",
+      "framework": "fastify",
+      "entrypoint": "src/server.ts",
+      "installCommand": "npm ci",
+      "buildCommand": "npm run build"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web"
+      }
+    }
+  ]
+}
