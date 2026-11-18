@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../constants/group_colors.dart';
 import '../controllers/location_controller.dart';
@@ -13,6 +14,13 @@ import 'search_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  static final _releasesUrl = Uri.parse(
+    'https://github.com/brian-mw/loadshedding-schedule/releases/latest',
+  );
+
+  Future<void> _openReleasesPage() =>
+      launchUrl(_releasesUrl, webOnlyWindowName: '_blank');
 
   Future<void> _confirmRemove(
     BuildContext context,
@@ -180,6 +188,20 @@ class SettingsScreen extends StatelessWidget {
                   'Scheduled and persistent status notifications are '
                   'available in the mobile app.',
                 ),
+              ),
+              const SizedBox(height: 28),
+              _SectionHeader(icon: LucideIcons.smartphone, title: 'Mobile app'),
+              const SizedBox(height: 4),
+              Text(
+                'Get scheduled and persistent status notifications by '
+                'installing the Android app.',
+                style: theme.textTheme.muted,
+              ),
+              const SizedBox(height: 12),
+              ShadButton.outline(
+                onPressed: _openReleasesPage,
+                leading: const Icon(LucideIcons.download, size: 16),
+                child: const Text('Download the mobile app'),
               ),
               const SizedBox(height: 28),
               const ShadAlert(
