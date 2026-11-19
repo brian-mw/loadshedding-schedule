@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -53,12 +52,6 @@ class _SearchScreenState extends State<SearchScreen> {
   );
 
   Future<void> _select(LocationEntry entry) async {
-    if (kIsWeb) {
-      _controller.selectWebLocation(entry);
-      Navigator.of(context).popUntil((route) => route.isFirst);
-      return;
-    }
-
     final toaster = ShadToaster.of(context);
     if (_controller.savedLocations.length >= SavedLocationsStore.maxSaved) {
       toaster.show(
@@ -109,7 +102,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final theme = ShadTheme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(kIsWeb ? 'Search locations' : 'Add a location'),
+        title: const Text('Add a location'),
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -189,7 +182,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final entry = results[index];
-                    final saved = !kIsWeb && _isSaved(entry);
+                    final saved = _isSaved(entry);
                     return GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: saved ? null : () => _select(entry),

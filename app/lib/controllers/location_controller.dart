@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 
 import '../data/api_repository.dart';
@@ -37,7 +36,6 @@ class LocationController extends GetxController {
   ];
 
   final RxList<SavedLocation> savedLocations = <SavedLocation>[].obs;
-  final Rxn<SavedLocation> webSelectedLocation = Rxn<SavedLocation>();
   final RxList<LocationEntry> searchResults = <LocationEntry>[].obs;
   final RxBool isSearching = false.obs;
   final RxBool searchFailed = false.obs;
@@ -84,19 +82,7 @@ class LocationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    if (kIsWeb) {
-      isLoaded.value = true;
-    } else {
-      _loadSaved();
-    }
-  }
-
-  void selectWebLocation(LocationEntry entry) {
-    webSelectedLocation.value = SavedLocation(
-      label: entry.location,
-      groupCode: entry.groupCode,
-      region: entry.region,
-    );
+    _loadSaved();
   }
 
   Future<void> _loadSaved() async {

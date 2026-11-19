@@ -29,34 +29,20 @@ class _HomeScreenState extends State<HomeScreen> {
   final _locationController = Get.find<LocationController>();
   final _scheduleController = Get.find<ScheduleController>();
   final _pageController = PageController();
-  Worker? _webLocationWorker;
 
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      _webLocationWorker = ever<SavedLocation?>(
-        _locationController.webSelectedLocation,
-        (selected) =>
-            _scheduleController.refreshFor(selected == null ? [] : [selected]),
-      );
-      final selected = _locationController.webSelectedLocation.value;
-      if (selected != null) {
-        _scheduleController.refreshFor([selected]);
-      }
-    } else {
-      ever(_locationController.savedLocations, (locations) {
-        _scheduleController.refreshFor(locations);
-      });
-      if (_locationController.isLoaded.value) {
-        _scheduleController.refreshFor(_locationController.savedLocations);
-      }
+    ever(_locationController.savedLocations, (locations) {
+      _scheduleController.refreshFor(locations);
+    });
+    if (_locationController.isLoaded.value) {
+      _scheduleController.refreshFor(_locationController.savedLocations);
     }
   }
 
   @override
   void dispose() {
-    _webLocationWorker?.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -64,10 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final selected = _locationController.webSelectedLocation.value;
-      final locations = kIsWeb
-          ? (selected == null ? <SavedLocation>[] : [selected])
-          : _locationController.savedLocations;
+      final locations = _locationController.savedLocations;
       if (locations.isEmpty) {
         return const _EmptyHomeScreen();
       }
@@ -358,20 +341,18 @@ class _EmptyHomeScreen extends StatelessWidget {
             const Icon(LucideIcons.mapPin, size: 48),
             const SizedBox(height: 12),
             Text(
-              kIsWeb ? 'Find your area' : 'No saved locations yet',
+              'No saved locations yet',
               style: ShadTheme.of(context).textTheme.h4,
             ),
             const SizedBox(height: 4),
             Text(
-              kIsWeb
-                  ? 'Search for a location to see its power status'
-                  : 'Add your area to see its power status',
+              'Add your area to see its power status',
               style: ShadTheme.of(context).textTheme.muted,
             ),
             const SizedBox(height: 16),
             ShadButton(
               onPressed: () => Get.to(() => const SearchScreen()),
-              child: Text(kIsWeb ? 'Search locations' : 'Add a location'),
+              child: const Text('Add a location'),
             ),
           ],
         ),
