@@ -90,13 +90,10 @@ jobs:
           path: data/
           retention-days: 1
 
-  upload:
+  upload-db:
     name: Upload to DB
     needs: parse
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v5
 
@@ -123,11 +120,25 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python pipeline/load_to_db.py --latest
 
+  create-pr:
+    name: Create PR
+    needs: upload-db
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: data-parsed
+          path: data/
+
       - name: Open a PR with any new data files
         # main requires changes via PR (no direct pushes), so this pushes to a
-        # throwaway branch and opens + auto-merges a PR instead of pushing
-        # straight to main - auto-merge still needs that repo setting enabled,
-        # and will stall if the ruleset also requires a human-approved review.
+        # throwaway branch and opens a PR instead of pushing straight to main -
+        # left for manual review/merge rather than auto-merged.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -142,7 +153,6 @@ jobs:
           git checkout -b "$branch"
           git commit -m "data: add newly scraped loadshedding programme(s)"
           git push origin "$branch"
-          pr_url=$(gh pr create --base main --head "$branch" \
+          gh pr create --base main --head "$branch" \
             --title "data: add newly scraped loadshedding programme(s)" \
-            --body "Automated data update from the weekly scrape workflow.")
-          gh pr merge --auto --squash --delete-branch "$pr_url"
+            --body "Automated data update from the weekly scrape workflow."
