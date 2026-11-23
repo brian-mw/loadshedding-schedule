@@ -96,6 +96,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v5
 
@@ -122,10 +123,26 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python pipeline/load_to_db.py --latest
 
-      - name: Commit any new data files
+      - name: Open a PR with any new data files
+        # main requires changes via PR (no direct pushes), so this pushes to a
+        # throwaway branch and opens + auto-merges a PR instead of pushing
+        # straight to main - auto-merge still needs that repo setting enabled,
+        # and will stall if the ruleset also requires a human-approved review.
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git diff --cached --quiet || git commit -m "data: add newly scraped loadshedding programme(s)"
-          git push
+          if git diff --cached --quiet; then
+            echo "No new data files - nothing to commit."
+            exit 0
+          fi
+          branch="bot/scraped-data-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$branch"
+          git commit -m "data: add newly scraped loadshedding programme(s)"
+          git push origin "$branch"
+          pr_url=$(gh pr create --base main --head "$branch" \
+            --title "data: add newly scraped loadshedding programme(s)" \
+            --body "Automated data update from the weekly scrape workflow.")
+          gh pr merge --auto --squash --delete-branch "$pr_url"
