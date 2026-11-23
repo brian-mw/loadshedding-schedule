@@ -90,13 +90,10 @@ jobs:
           path: data/
           retention-days: 1
 
-  upload:
+  upload-db:
     name: Upload to DB
     needs: parse
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v5
 
@@ -122,6 +119,21 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python pipeline/load_to_db.py --latest
+
+  create-pr:
+    name: Create PR
+    needs: upload-db
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: data-parsed
+          path: data/
 
       - name: Open a PR with any new data files
         # main requires changes via PR (no direct pushes), so this pushes to a
